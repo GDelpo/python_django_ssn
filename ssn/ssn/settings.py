@@ -39,16 +39,32 @@ STATIC_URL = "/static/"
 LOGS_DIR = BASE_DIR / "logs"
 Path(LOGS_DIR).mkdir(parents=True, exist_ok=True)
 
+# Verificar si estamos en entorno de construcción del Dockerfile
+IN_DOCKER_BUILD = os.environ.get('SECRET_KEY') == 'dummy'
+
+# Función auxiliar para manejar configuraciones
+def get_build_config(key, default=None, build_value=None, cast=None):
+    """
+    Obtiene un valor de configuración, con manejo especial para entorno de construcción.
+    """
+    if IN_DOCKER_BUILD and build_value is not None:
+        if cast is not None and build_value is not None:
+            return cast(build_value)
+        return build_value
+    if cast is not None:
+        return config(key, default=default, cast=cast)
+    return config(key, default=default)
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("SECRET_KEY")
+SECRET_KEY = get_build_config("SECRET_KEY", build_value="dummy_key_for_build")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = get_build_config("DEBUG", default=False, build_value=True, cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv())
+ALLOWED_HOSTS = get_build_config("ALLOWED_HOSTS", default="", build_value="localhost,127.0.0.1", cast=Csv())
 
 
 # Application definition
@@ -74,7 +90,7 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-NPM_BIN_PATH = "npm.cmd"
+NPM_BIN_PATH = "npm.cmd" if not IN_DOCKER_BUILD else "npm"
 
 
 MIDDLEWARE = [
@@ -112,9 +128,6 @@ WSGI_APPLICATION = "ssn.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-# Verificar si estamos en entorno de construcción del Dockerfile
-IN_DOCKER_BUILD = os.environ.get('SECRET_KEY') == 'dummy'
 
 # Database
 if IN_DOCKER_BUILD:
@@ -181,12 +194,12 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # SSN Client Configuration
-SSN_API_USERNAME = config("SSN_API_USERNAME")
-SSN_API_PASSWORD = config("SSN_API_PASSWORD")
-SSN_API_CIA = config("SSN_API_CIA")
-SSN_API_BASE_URL = config("SSN_API_BASE_URL")
-SSN_API_MAX_RETRIES = config("SSN_API_MAX_RETRIES", default=3, cast=int)
-SSN_API_RETRY_DELAY = config("SSN_API_RETRY_DELAY", default=5, cast=int)
+SSN_API_USERNAME = get_build_config("SSN_API_USERNAME", build_value="build_user")
+SSN_API_PASSWORD = get_build_config("SSN_API_PASSWORD", build_value="build_pass")
+SSN_API_CIA = get_build_config("SSN_API_CIA", build_value="build_cia")
+SSN_API_BASE_URL = get_build_config("SSN_API_BASE_URL", build_value="https://example.com")
+SSN_API_MAX_RETRIES = get_build_config("SSN_API_MAX_RETRIES", default=3, build_value=3, cast=int)
+SSN_API_RETRY_DELAY = get_build_config("SSN_API_RETRY_DELAY", default=5, build_value=5, cast=int)
 
 
 # Configuración de logging
@@ -235,4 +248,4 @@ ALLOWED_UPLOAD_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg"]
 MAX_UPLOAD_SIZE = 5242880  # 5MB en bytes
 
 # Correo de soporte
-SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="soporte@compania.com")
+SUPPORT_EMAIL = get_build_config("SUPPORT_EMAIL", default="soporte@compania.com", build_value="example@example.com")
