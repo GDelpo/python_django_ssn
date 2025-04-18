@@ -43,9 +43,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=python:python . .
 
 # Instalar y construir Tailwind + collectstatic
-RUN python manage.py tailwind install --no-input \
- && python manage.py tailwind build --no-input \
- && python manage.py collectstatic --no-input
+RUN python ssn/manage.py tailwind install --no-input && python ssn/manage.py tailwind build --no-input && python ssn/manage.py collectstatic --no-input
 
 # Entrypoint y permisos
 COPY entrypoint.sh /entrypoint.sh
