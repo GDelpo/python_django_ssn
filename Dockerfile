@@ -26,27 +26,26 @@ USER python
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED="true" \
     PATH="${PATH}:/home/python/.local/bin" \
-    USER="python"
-
-# Copiar e instalar requisitos
-COPY --chown=python:python requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copiar el resto del código
-COPY --chown=python:python . .
-
-# Variables dummy para evitar errores de decouple en build-time
-ENV SECRET_KEY=nothing \
+    USER="python" \
+    SECRET_KEY=dummy \
     POSTGRES_DB=devdb \
     POSTGRES_USER=devuser \
     POSTGRES_PASSWORD=devpass \
     DB_HOST=localhost \
-    DB_PORT=5432
+    DB_PORT=5432 \
+    SSN_API_BASE_URL=https://example.com
 
-# Instalar y construir Tailwind, y recopilar archivos estáticos
-RUN python ssn/manage.py tailwind install --no-input
-RUN python ssn/manage.py tailwind build --no-input
-RUN python ssn/manage.py collectstatic --no-input
+# Instalar dependencias
+COPY --chown=python:python requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código
+COPY --chown=python:python . .
+
+# Instalar y construir Tailwind + collectstatic
+RUN python manage.py tailwind install --no-input \
+ && python manage.py tailwind build --no-input \
+ && python manage.py collectstatic --no-input
 
 # Entrypoint y permisos
 COPY entrypoint.sh /entrypoint.sh
