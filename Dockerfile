@@ -32,10 +32,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el resto del código
 COPY --chown=python:python . .
 
+# Variables dummy para evitar errores de decouple en build-time
+ENV SECRET_KEY=nothing \
+    POSTGRES_DB=devdb \
+    POSTGRES_USER=devuser \
+    POSTGRES_PASSWORD=devpass \
+    DB_HOST=localhost \
+    DB_PORT=5432
+
 # Instalar y construir Tailwind, y recopilar archivos estáticos
-RUN SECRET_KEY=nothing python ssn/manage.py tailwind install --no-package-lock --no-input
-RUN SECRET_KEY=nothing python ssn/manage.py tailwind build --no-input
-RUN SECRET_KEY=nothing python ssn/manage.py collectstatic --no-input
+RUN python ssn/manage.py tailwind install --no-package-lock --no-input
+RUN python ssn/manage.py tailwind build --no-input
+RUN python ssn/manage.py collectstatic --no-input
 
 # Entrypoint y permisos
 COPY entrypoint.sh /entrypoint.sh
