@@ -16,6 +16,15 @@ services:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
 
+  tailwind:
+    build: .
+    container_name: django_tailwind
+    env_file: .env
+    volumes:
+      - .:/app
+    command: python ssn/manage.py tailwind start
+    tty: true  # Importante para el watcher de Tailwind
+
   db:
     image: postgres:15
     container_name: postgres_db

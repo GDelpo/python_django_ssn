@@ -1,31 +1,41 @@
 FROM python:3.12-slim-bookworm
 
-# Instala Node.js (para Django Tailwind) y dependencias
-ARG NODE_MAJOR=22
-RUN apt-get update \
-    && apt-get install -y curl gnupg tzdata build-essential libpq-dev libmagic1 netcat-openbsd \
-    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
-    && apt-get update && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
-
-# Configurar variables de entorno para Python
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
 WORKDIR /app
 
-# Instala dependencias de Python
-COPY requirements.txt .
+# Instalar Node.js
+ARG NODE_MAJOR=22
+RUN apt-get update \
+    && apt-get install -y ca-certificates curl gnupg libpq-dev libmagic1 netcat-openbsd \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
+    && apt-get update \
+    && apt-get install nodejs -y \
+    && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
+    && apt-get clean \
+    && useradd --create-home python \
+    && chown python:python -R /app
+
+# Cambiar al usuario no-root
+USER python
+
+# Configurar variables de entorno
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED="true" \
+    PATH="${PATH}:/home/python/.local/bin" \
+    USER="python"
+
+# Copiar e instalar requisitos
+COPY --chown=python:python requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia el resto de la app
-COPY . .
+# Copiar el resto del código
+COPY --chown=python:python . .
 
-# Tailwind y staticfiles (con SECRET_KEY dummy porque es obligatorio)
-RUN SECRET_KEY=dummy python ssn/manage.py tailwind install --no-input --no-package-lock
-RUN SECRET_KEY=dummy python ssn/manage.py tailwind build --no-input
-RUN SECRET_KEY=dummy python ssn/manage.py collectstatic --no-input
+# Instalar y construir Tailwind, y recopilar archivos estáticos
+RUN SECRET_KEY=nothing python ssn/manage.py tailwind install --no-package-lock --no-input
+RUN SECRET_KEY=nothing python ssn/manage.py tailwind build --no-input
+RUN SECRET_KEY=nothing python ssn/manage.py collectstatic --no-input
 
 # Entrypoint y permisos
 COPY entrypoint.sh /entrypoint.sh
