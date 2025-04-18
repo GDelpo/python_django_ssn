@@ -44,7 +44,7 @@ ENV SECRET_KEY=nothing \
     DB_PORT=5432
 
 # Instalar y construir Tailwind, y recopilar archivos estáticos
-RUN python ssn/manage.py tailwind install --no-package-lock --no-input
+RUN python ssn/manage.py tailwind install --no-input
 RUN python ssn/manage.py tailwind build --no-input
 RUN python ssn/manage.py collectstatic --no-input
 
