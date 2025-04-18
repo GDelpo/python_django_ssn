@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -112,17 +113,30 @@ WSGI_APPLICATION = "ssn.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Configuración de la base de datos PostgreSQL
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('POSTGRES_DB'),
-        'USER': config('POSTGRES_USER'),
-        'PASSWORD': config('POSTGRES_PASSWORD'),
-        'HOST': 'db',  # nombre del servicio en docker-compose
-        'PORT': '5432',
+# Verificar si estamos en entorno de construcción del Dockerfile
+IN_DOCKER_BUILD = os.environ.get('SECRET_KEY') == 'dummy'
+
+# Database
+if IN_DOCKER_BUILD:
+    # Configuración para construcción de Docker
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    # Configuración normal para ejecución
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('POSTGRES_DB'),
+            'USER': config('POSTGRES_USER'),
+            'PASSWORD': config('POSTGRES_PASSWORD'),
+            'HOST': 'db',  # nombre del servicio en docker-compose
+            'PORT': '5432',
+        }
+    }
 
 
 # Password validation
