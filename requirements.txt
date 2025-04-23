@@ -1,0 +1,29 @@
+# Django y componentes relacionados
+Django==5.1.7
+djangorestframework==3.16.0
+django-tailwind==3.8.0
+django-browser-reload==1.18.0
+
+# Utilidades y configuración
+python-decouple==3.8
+python-magic==0.4.27
+
+# Autenticación y seguridad
+PyJWT==2.10.1
+django-csp==4.0
+
+# Procesamiento de datos
+pandas==2.2.3
+XlsxWriter==3.2.3
+
+# Cliente HTTP para API
+requests==2.32.3
+
+# Utilidades adicionales
+python-slugify==8.0.4
+
+# Servidor WSGI para producción
+gunicorn==23.0.0
+
+# Base de datos y ORM
+psycopg2-binary==2.9.10

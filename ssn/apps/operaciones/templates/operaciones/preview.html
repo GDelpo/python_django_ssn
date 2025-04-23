@@ -1,0 +1,77 @@
+{% extends "../base/base.html" %}
+{% block title %}Vista Previa de Solicitud{% endblock %}
+
+{% block content %}
+  {% block extra_info %}
+    {% include "../_extra_info.html" %}
+  {% endblock %}
+
+  <div class="max-w-3xl mx-auto">
+    {% include "componentes/card.html" with title="Vista Previa de Solicitud" header_buttons=header_buttons %}
+
+    {% block card_content %}
+    <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6 overflow-hidden">
+      {% if is_readonly %}
+      <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-center text-blue-700">
+          <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+          <span>Esta solicitud ya ha sido <strong>enviada</strong> ({{ base_request.send_at|date:"d/m/Y H:i" }}). Sólo puedes visualizarla.</span>
+        </div>
+      </div>
+      {% endif %}
+      
+      <h3 class="text-lg font-bold text-blue-600 truncate mb-6">Indentificador: <span id="uuidSolicitud" class="font-medium text-blue-800 italic cursor-pointer hover:text-blue-600 hover:underline transition duration-200">{{base_request.uuid}}</span></h3>
+      <!-- Área para mostrar el JSON formateado, con altura máxima y scroll -->
+      <div class="mb-3">
+        <pre id="jsonContent" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; max-height: 400px; overflow-y: auto;">
+{{ formatted_json }}
+        </pre>
+      </div>
+      
+      <!-- Botones para copiar y enviar por mail, en grid con separación -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+        {% include "componentes/button.html" with id="copyButton" href=edit_url icon="fas fa-copy" label="Copiar JSON" color="primary" %}
+        {% include "componentes/link_button.html" with href=mailto_link icon="fas fa-share" label="Enviar por mail" color="warning" %}
+      </div>
+      <div>
+        {% include "componentes/link_button.html" with href=excel_link icon="fas fa-file-arrow-down" label="Descargar <strong>.xlsx</strong>" color="success" %}
+      </div>
+    {% endblock %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Agregamos verificación para el botón enviar (podría no existir en modo solo lectura)
+  const enviarBtn = document.getElementById("enviarSolicitud");
+  if (enviarBtn) {
+    enviarBtn.addEventListener("click", function(event) {
+      // Muestra un cuadro de confirmación
+      if (!confirm("¿Estás seguro de que quieres enviar la solicitud?")) {
+        // Si el usuario cancela, se evita el envío
+        event.preventDefault();
+      }
+    });
+  }
+
+  document.getElementById("copyButton").addEventListener("click", function() {
+    const jsonText = document.getElementById("jsonContent").innerText;
+    navigator.clipboard.writeText(jsonText)
+      .then(() => { alert("JSON copiado al portapapeles"); })
+      .catch(err => { alert("Error al copiar el JSON: " + err); });
+  });
+
+  document.getElementById("uuidSolicitud").addEventListener("click", function () {
+    const textToCopy = this.innerText;
+  
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        alert("UUID copiado al portapapeles");
+      })
+      .catch(err => {
+        alert("Error al copiar el UUID: " + err);
+      });
+  });
+</script>
+{% endblock %}

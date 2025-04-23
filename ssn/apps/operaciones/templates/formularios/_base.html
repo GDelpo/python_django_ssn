@@ -1,0 +1,33 @@
+{% extends "../base/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  {% block extra_info %}
+    {% include "../_extra_info.html" %}
+  {% endblock %}
+
+  <div class="max-w-3xl mx-auto">
+    {% include "componentes/card.html" with title=title %}
+
+    {% block card_content %}
+      {% block extra_form_content %}
+      {% endblock%}
+      <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6 overflow-hidden">
+        {% include "componentes/form_open.html" %}
+
+        {% block form_fields %}{% endblock %}
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+          {% block submit_button %}
+            {% include "componentes/button.html" with label=boton_texto icon="fas fa-save" color="primary" %}
+          {% endblock %}
+          {% block extra_buttons %}{% endblock %}
+        </div>
+
+        {% include "componentes/form_close.html" %}
+      </div>
+    {% endblock %}
+  </div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}

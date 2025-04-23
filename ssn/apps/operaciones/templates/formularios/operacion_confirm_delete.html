@@ -1,0 +1,17 @@
+{% extends "./_base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block form_fields %}
+  <p class="text-red-700 text-center">
+    ¿Estás seguro de que querés eliminar esta operación?
+  </p>
+{% endblock %}
+
+{% block submit_button %}
+  {% include "componentes/button.html" with label=boton_texto icon="fas fa-trash" color="danger" %}
+{% endblock %}
+
+{% block extra_buttons %}
+  {% include "componentes/link_button.html" with href=cancel_url label="Cancelar" icon="fas fa-times" color="secondary" %}
+{% endblock %}

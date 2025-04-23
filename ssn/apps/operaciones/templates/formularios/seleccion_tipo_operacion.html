@@ -1,0 +1,22 @@
+{% extends "./_base.html" %}
+
+{% block title %}Tipo de Operación{% endblock %}
+
+{% block form_fields %}
+  <div class="space-y-4">
+    {% for field in form %}
+      {% include "./_field.html" with field=field %}
+    {% endfor %}
+  </div>
+{% endblock %}
+{% block submit_button %}
+  {% include "componentes/button.html" with label=boton_texto color="primary" %}
+{% endblock %}
+{% block extra_buttons %}
+  {% for key, value in extra_info %}
+    {% if key == "Operaciones" and value|length > 0 %}
+      {% url 'operaciones:lista_operaciones' uuid=base_request.uuid as lista_url %}
+      {% include "componentes/link_button.html" with href=lista_url label="Ver Operaciones" icon="fas fa-list" color="warning" %}
+    {% endif %}
+  {% endfor %}
+{% endblock %}

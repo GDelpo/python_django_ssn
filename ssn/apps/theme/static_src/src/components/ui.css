@@ -1,0 +1,35 @@
+.button_primary {
+    @apply w-full inline-flex items-center justify-center px-2 py-2 rounded-md text-sm font-medium transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200;
+  }
+  
+  .button_success {
+    @apply w-full inline-flex items-center justify-center px-2 py-2 rounded-md text-sm font-medium transition-colors bg-green-100 text-green-700 hover:bg-green-200;
+  }
+  
+  .button_warning {
+    @apply w-full inline-flex items-center justify-center px-2 py-2 rounded-md text-sm font-medium transition-colors bg-yellow-100 text-yellow-800 hover:bg-yellow-200;
+  }
+  
+  .button_danger {
+    @apply w-full inline-flex items-center justify-center px-2 py-2 rounded-md text-sm font-medium transition-colors bg-red-100 text-red-700 hover:bg-red-200;
+  }
+  
+  .button_secondary {
+    @apply w-full inline-flex items-center justify-center px-2 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200;
+  }
+  
+  .form_group {
+    @apply block text-sm font-medium text-gray-700;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden;
+  }
+  
+  .card_header {
+    @apply px-6 py-4 bg-blue-50/50 border-b border-blue-100 flex items-center justify-between;
+  }
+  
+  .form_wrapper {
+    @apply p-6;
+  }

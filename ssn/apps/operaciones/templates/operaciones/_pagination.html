@@ -1,0 +1,73 @@
+{% if operations.has_other_pages %}
+  <nav class="px-6 py-3 flex items-center justify-between flex-wrap" aria-label="Pagination">
+    <div class="flex-1 flex justify-between sm:hidden">
+      {% if operations.has_previous %}
+        <a href="?page={{ operations.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+          <i class="fas fa-chevron-left mr-1"></i> Anterior
+        </a>
+      {% else %}
+        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">
+          <i class="fas fa-chevron-left mr-1"></i> Anterior
+        </span>
+      {% endif %}
+
+      {% if operations.has_next %}
+        <a href="?page={{ operations.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+          Siguiente <i class="fas fa-chevron-right ml-1"></i>
+        </a>
+      {% else %}
+        <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">
+          Siguiente <i class="fas fa-chevron-right ml-1"></i>
+        </span>
+      {% endif %}
+    </div>
+
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-gray-700">
+          Mostrando <span class="font-medium">{{ operations.start_index }}</span> a <span class="font-medium">{{ operations.end_index }}</span> de <span class="font-medium">{{ operations.paginator.count }}</span> resultados
+        </p>
+      </div>
+
+      <div>
+        <span class="relative z-0 inline-flex shadow-sm rounded-md">
+          {% if operations.has_previous %}
+            <a href="?page={{ operations.previous_page_number }}" class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <span class="sr-only">Anterior</span>
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          {% else %}
+            <span class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+              <span class="sr-only">Anterior</span>
+              <i class="fas fa-chevron-left"></i>
+            </span>
+          {% endif %}
+
+          {% for num in operations.paginator.page_range %}
+            {% if operations.number == num %}
+              <span aria-current="page" class="relative inline-flex items-center px-4 py-2 border border-blue-600 bg-blue-50 text-sm font-medium text-blue-600">
+                {{ num }}
+              </span>
+            {% else %}
+              <a href="?page={{ num }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                {{ num }}
+              </a>
+            {% endif %}
+          {% endfor %}
+
+          {% if operations.has_next %}
+            <a href="?page={{ operations.next_page_number }}" class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <span class="sr-only">Siguiente</span>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          {% else %}
+            <span class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+              <span class="sr-only">Siguiente</span>
+              <i class="fas fa-chevron-right"></i>
+            </span>
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </nav>
+{% endif %}

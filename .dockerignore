@@ -1,0 +1,36 @@
+# Sistema
+.git/
+.github/
+.gitignore
+.DS_Store
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+db.sqlite3
+
+# Entorno
+env/
+venv/
+.env
+.venv/
+.ruff_cache/
+
+# Logs y media/archivos de usuario
+*.log
+
+# Herramientas de desarrollo
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docs
+README.md
+LICENSE
+*.md
+
+# Scripts locales
+deploy.sh
+generate_secret_key.py

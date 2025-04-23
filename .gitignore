@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg-info/
+*.egg
+
+# Django
+db.sqlite3
+*.log
+*.pot
+*.pyc
+*.mo
+local_settings.py
+
+# Media & Static
+media/
+staticfiles/
+static_root/
+media_root/
+
+# Environment
+.env
+.env.*
+
+# Virtualenvs
+venv/
+.venv/
+ENV/
+env/
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Tailwind build artifacts (adjust if needed)
+app/static_src/node_modules/
+app/static_src/.bin/
+app/static_src/dist/
+
+# Docker
+*.pid
+docker-compose.override.yml
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+
+# Compiled Bytecode
+*.pyc
+*.pyo
+
+
+# VSCode settings (opcional)
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# Ruff
+.ruff_cache/
+
+# nginx
+nginx/default.conf
