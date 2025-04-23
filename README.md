@@ -220,3 +220,10 @@ Los archivos con datos sensibles no deben subirse a Git:
 
 - `.env` (contiene contraseñas y claves)
 - `nginx/default.conf` (configuración específica de servidor)
+
+## ✏ TODOs
+
+- [ ] Generar presentación MENSUAL de operaciones a la SSN.
+- [ ] Agregar Background Tasks, limpieza de logs y operaciones viejas ("vencidas").
+- [ ] Revisar APIS BYMA, para poder generar reportes, etc.
+- [ ] Mejorar estructura de templates y CSS.
