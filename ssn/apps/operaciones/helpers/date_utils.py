@@ -153,22 +153,23 @@ def generate_week_options(year: int) -> Tuple[List[str], ...]:
     # Convert the list to a tuple to make it immutable
     return tuple(calendar_weeks)
 
+
 def generate_monthly_options(year: int) -> Tuple[List[str], ...]:
     """
     Generates monthly options for a given year.
-    
+
     The function returns a tuple of lists, where each list contains:
     - Month identifier in format "YYYY-MM"
     - Month name and year (e.g. "Enero 2025")
-    
+
     Args:
         year: The year for which to generate the monthly options.
-        
+
     Returns:
         A tuple of lists, each with two elements:
         - [0]: Month identifier in format "YYYY-MM"
         - [1]: Month name and year
-        
+
     Example:
         >>> options = generate_monthly_options(2025)
         >>> print(options[0])
@@ -176,17 +177,26 @@ def generate_monthly_options(year: int) -> Tuple[List[str], ...]:
     """
     # Dictionary with Spanish month names
     month_names = {
-        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 
-        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto", 
-        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+        1: "Enero",
+        2: "Febrero",
+        3: "Marzo",
+        4: "Abril",
+        5: "Mayo",
+        6: "Junio",
+        7: "Julio",
+        8: "Agosto",
+        9: "Septiembre",
+        10: "Octubre",
+        11: "Noviembre",
+        12: "Diciembre",
     }
-    
+
     options = []
     for month in range(1, 13):
         month_id = f"{year}-{month:02d}"
         month_label = f"{month_names[month]} {year}"
         options.append([month_id, month_label])
-    
+
     return tuple(options)
 
 

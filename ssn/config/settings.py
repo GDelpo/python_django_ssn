@@ -40,7 +40,8 @@ LOGS_DIR = BASE_DIR / "logs"
 Path(LOGS_DIR).mkdir(parents=True, exist_ok=True)
 
 # Verificar si estamos en entorno de construcción del Dockerfile
-IN_DOCKER_BUILD = os.environ.get('SECRET_KEY') == 'dummy'
+IN_DOCKER_BUILD = os.environ.get("SECRET_KEY") == "dummy"
+
 
 # Función auxiliar para manejar configuraciones
 def get_build_config(key, default=None, build_value=None, cast=None):
@@ -55,6 +56,7 @@ def get_build_config(key, default=None, build_value=None, cast=None):
         return config(key, default=default, cast=cast)
     return config(key, default=default)
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -67,23 +69,28 @@ DEBUG = get_build_config("DEBUG", default=False, build_value=True, cast=bool)
 # SECURITY WARNING: define the correct hosts in production!
 # https://docs.djangoproject.com/en/5.1/ref/settings/#allowed-hosts
 # Configuración base de hosts permitidos
-base_hosts = get_build_config("ALLOWED_HOSTS", default="", build_value="localhost,127.0.0.1", cast=Csv())
+base_hosts = get_build_config(
+    "ALLOWED_HOSTS", default="", build_value="localhost,127.0.0.1", cast=Csv()
+)
 
 # Añadir nombres de servicios Docker y rango de IPs común
 ALLOWED_HOSTS = list(base_hosts) + [
     # Nombres de servicios
-    'web', 'nginx', 'db', 'inversiones.nobleseguros.com',
+    "web",
+    "nginx",
+    "db",
+    "inversiones.nobleseguros.com",
 ]
 
 # Añadir IPs de Docker más comunes (rango 172.16-31.0.1-5)
 for i in range(16, 32):
     for j in range(1, 6):
-        ALLOWED_HOSTS.append(f'172.{i}.0.{j}')
+        ALLOWED_HOSTS.append(f"172.{i}.0.{j}")
 
 # Añadir el rango de IPs 192.168.x.x
 for i in range(0, 256):
     for j in range(0, 6):  # Añadir IPs .0 a .5
-        ALLOWED_HOSTS.append(f'192.168.{i}.{j}')
+        ALLOWED_HOSTS.append(f"192.168.{i}.{j}")
 
 # Application definition
 INSTALLED_APPS = [
@@ -108,7 +115,9 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-NPM_BIN_PATH = "/usr/bin/npm"
+# NPM_BIN_PATH = "/usr/bin/npm"
+
+NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -150,28 +159,27 @@ WSGI_APPLICATION = "config.wsgi.application"
 if IN_DOCKER_BUILD:
     # Configuración para construcción de Docker
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 else:
     # Configuración normal para ejecución
     DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('POSTGRES_DB'),  # Debe ser 'ssn_db', no 'ssn_user'
-        'USER': config('POSTGRES_USER'),
-        'PASSWORD': config('POSTGRES_PASSWORD'),
-        'HOST': config('POSTGRES_HOST', default='db'),
-        'PORT': config('POSTGRES_PORT', default='5432'),
-        'OPTIONS': {
-            'options': '-c search_path=public',
-            'client_encoding': 'UTF8',
-        },
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("POSTGRES_DB"),  # Debe ser 'ssn_db', no 'ssn_user'
+            "USER": config("POSTGRES_USER"),
+            "PASSWORD": config("POSTGRES_PASSWORD"),
+            "HOST": config("POSTGRES_HOST", default="db"),
+            "PORT": config("POSTGRES_PORT", default="5432"),
+            "OPTIONS": {
+                "options": "-c search_path=public",
+                "client_encoding": "UTF8",
+            },
+        }
     }
-}
-
 
 
 # Password validation
@@ -219,9 +227,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SSN_API_USERNAME = get_build_config("SSN_API_USERNAME", build_value="build_user")
 SSN_API_PASSWORD = get_build_config("SSN_API_PASSWORD", build_value="build_pass")
 SSN_API_CIA = get_build_config("SSN_API_CIA", build_value="build_cia")
-SSN_API_BASE_URL = get_build_config("SSN_API_BASE_URL", build_value="https://example.com")
-SSN_API_MAX_RETRIES = get_build_config("SSN_API_MAX_RETRIES", default=3, build_value=3, cast=int)
-SSN_API_RETRY_DELAY = get_build_config("SSN_API_RETRY_DELAY", default=5, build_value=5, cast=int)
+SSN_API_BASE_URL = get_build_config(
+    "SSN_API_BASE_URL", build_value="https://example.com"
+)
+SSN_API_MAX_RETRIES = get_build_config(
+    "SSN_API_MAX_RETRIES", default=3, build_value=3, cast=int
+)
+SSN_API_RETRY_DELAY = get_build_config(
+    "SSN_API_RETRY_DELAY", default=5, build_value=5, cast=int
+)
 
 
 # Configuración de logging
@@ -256,20 +270,31 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
         "default-src": ("'self'",),
-        "style-src": ("'self'", "fonts.googleapis.com", "cdnjs.cloudflare.com", "'unsafe-inline'"),
+        "style-src": (
+            "'self'",
+            "fonts.googleapis.com",
+            "cdnjs.cloudflare.com",
+            "'unsafe-inline'",
+        ),
         "script-src": ("'self'", "'unsafe-inline'", "'unsafe-eval'"),
         "font-src": ("'self'", "fonts.gstatic.com", "cdnjs.cloudflare.com"),
-        "img-src": ("'self'", "data:", "https:", "http:", "*"), # Permitir imágenes de cualquier origen
+        "img-src": (
+            "'self'",
+            "data:",
+            "https:",
+            "http:",
+            "*",
+        ),  # Permitir imágenes de cualquier origen
         "connect-src": ("'self'",),
     }
 }
 
 # Header de Cross-Origin-Opener-Policy
-SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 
 # Asegurar redirección a HTTPS en producción
 SECURE_SSL_REDIRECT = False
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Configuraciones HSTS
 SECURE_HSTS_SECONDS = 31536000  # 1 año
@@ -290,4 +315,6 @@ ALLOWED_UPLOAD_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg"]
 MAX_UPLOAD_SIZE = 5242880  # 5MB en bytes
 
 # Correo de soporte
-SUPPORT_EMAIL = get_build_config("SUPPORT_EMAIL", default="soporte@compania.com", build_value="example@example.com")
+SUPPORT_EMAIL = get_build_config(
+    "SUPPORT_EMAIL", default="soporte@compania.com", build_value="example@example.com"
+)

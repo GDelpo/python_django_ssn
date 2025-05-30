@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.db import connection
 
+
 def health_check(request):
     try:
         with connection.cursor() as cursor:
@@ -9,7 +10,9 @@ def health_check(request):
     except Exception:
         db_status = "down"
 
-    return JsonResponse({
-        "status": "ok",
-        "database": db_status,
-    })
+    return JsonResponse(
+        {
+            "status": "ok",
+            "database": db_status,
+        }
+    )

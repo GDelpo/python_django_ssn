@@ -3,7 +3,7 @@
 
 {% block content %}
   {% block extra_info %}
-    {% include "../_extra_info.html" %}
+    {% include "partials/_extra_info.html" %}
   {% endblock %}
 
   <div class="max-w-3xl mx-auto">
@@ -18,10 +18,10 @@
         {% block form_fields %}{% endblock %}
 
         <div class="flex flex-col sm:flex-row gap-3 pt-2">
+          {% block extra_buttons %}{% endblock %}
           {% block submit_button %}
             {% include "componentes/button.html" with label=boton_texto icon="fas fa-save" color="primary" %}
           {% endblock %}
-          {% block extra_buttons %}{% endblock %}
         </div>
 
         {% include "componentes/form_close.html" %}

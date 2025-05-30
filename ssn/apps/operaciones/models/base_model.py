@@ -1,4 +1,3 @@
-import re
 import uuid
 
 from django.core.validators import MinLengthValidator

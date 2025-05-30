@@ -26,70 +26,52 @@ class SolicitudSenderService:
         # Obtener el cliente SSN desde la configuración de la app
         self.ssn_client = apps.get_app_config("ssn_client").ssn_client
 
-    def enviar(self) -> Tuple[Dict[str, Any], int]:
+    def enviar(self, allow_empty: bool = False) -> Tuple[Dict[str, Any], int]:
         """
-        Envía la solicitud a la SSN en un proceso de dos pasos:
-        1. Enviar las operaciones al endpoint de entrega
-        2. Confirmar la entrega
+        Envía la solicitud a la SSN en dos pasos:
+         1) entrega{tipoEntrega}
+         2) confirmarEntrega{tipoEntrega}
+
+        Si `allow_empty=True`, no falla cuando no hay operaciones y envía
+        `"operaciones": []` de todas formas.
 
         Returns:
-            Tuple[Dict[str, Any], int]: (Datos de respuesta, código de estado HTTP)
+            Tuple[Dict, int]: (datos de respuesta, código HTTP)
         """
-        # Validar que hay operaciones para enviar
-        if not self.operations:
+        # 1) Validar presencia de operaciones (a menos que permitamos vacío)
+        if not self.operations and not allow_empty:
             logger.warning("Intento de envío sin operaciones")
             return {"error": "No hay operaciones para enviar."}, HTTPStatus.BAD_REQUEST
 
-        # Serializar la solicitud base y las operaciones
+        # 2) Serializar (operaciones será [] si está vacío)
         payload = serialize_operations(self.base_request, self.operations)
         tipo_entrega = payload.get("tipoEntrega")
-
-        # Validar que hay tipo de entrega
         if not tipo_entrega:
             logger.error("Falta el tipo de entrega en el payload")
             return {"error": "Falta el tipo de entrega."}, HTTPStatus.BAD_REQUEST
 
-        # Paso 1: Enviar entrega
-        logger.info(
-            f"Enviando operaciones tipo {tipo_entrega} al endpoint entrega{tipo_entrega}"
-        )
+        # 3) Paso 1: enviar entrega
+        logger.info(f"Enviando operaciones tipo {tipo_entrega} a entrega{tipo_entrega}")
         entrega_response, entrega_status = self.ssn_client.post_resource(
             f"entrega{tipo_entrega}", data=payload
         )
-
-        # Si hay errores en el primer paso, retornar la respuesta
         if self._is_error_status(entrega_status):
-            logger.error(
-                f"Error en entrega{tipo_entrega}: {entrega_response} "
-                f"(Status: {entrega_status})"
-            )
+            logger.error(f"Error en entrega{tipo_entrega}: {entrega_response}")
             return entrega_response, entrega_status
 
-        # Paso 2: Confirmar entrega
-        # Preparar datos para confirmación (solo los campos necesarios)
+        # 4) Paso 2: confirmar entrega
         confirm_payload = self._prepare_confirm_payload(payload)
-
         logger.info(f"Confirmando entrega tipo {tipo_entrega}")
         confirm_response, confirm_status = self.ssn_client.post_resource(
             f"confirmarEntrega{tipo_entrega}", data=confirm_payload
         )
-
-        # Si hay errores en el segundo paso, retornar la respuesta
         if self._is_error_status(confirm_status):
-            logger.error(
-                f"Error en confirmarEntrega{tipo_entrega}: {confirm_response} "
-                f"(Status: {confirm_status})"
-            )
+            logger.error(f"Error en confirmarEntrega{tipo_entrega}: {confirm_response}")
             return confirm_response, confirm_status
 
-        # Actualiza send_at tras un envío exitoso
+        # 5) Marcar como enviado
         self._mark_as_sent()
-
-        # Registrar éxito y retornar la respuesta
-        logger.info(
-            f"Solicitud enviada exitosamente. Status: {confirm_status}, "
-            f"Respuesta: {confirm_response}"
-        )
+        logger.info(f"Solicitud {self.base_request.uuid} enviada correctamente")
         return confirm_response, confirm_status
 
     def _is_error_status(self, status_code: int) -> bool:

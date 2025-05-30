@@ -1,4 +1,4 @@
-{% extends "./_base.html" %}
+{% extends "formularios/_base.html" %}
 
 {% block title %}Detalles de Operación{% endblock %}
 
@@ -20,7 +20,7 @@
         {# Renderizamos tipo_operacion primero #}
         {% for field in form %}
           {% if field.name == "tipo_operacion" or field.name == "codigo_afectacion" %}
-            {% include "./_field.html" with field=field special_fields="tipo_operacion codigo_afectacion" %}
+            {% include "partials/_field.html"  with field=field special_fields="tipo_operacion codigo_afectacion" %}
           {% endif %}
         {% endfor %}
       </div>
@@ -34,7 +34,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% for field in form %}
           {% if field.name != "tipo_operacion" and field.name != "codigo_afectacion" and field.name != "comprobante" %}
-            {% include "./_field.html" with field=field special_fields="tipo_operacion codigo_afectacion cant_especies" %}
+            {% include "partials/_field.html"  with field=field special_fields="tipo_operacion codigo_afectacion cant_especies" %}
           {% endif %}
         {% endfor %}
       </div>

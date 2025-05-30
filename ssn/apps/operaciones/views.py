@@ -224,7 +224,7 @@ class OperationTableView(PaginationMixin, OperacionTemplateMixin):
     Muestra la tabla con paginación y opciones de acción.
     """
 
-    template_name = "operaciones/lista.html"
+    template_name = "listados/lista.html"
     titulo = "Tabla de Operaciones"
 
     def get_context_data(self, **kwargs):
@@ -442,7 +442,7 @@ class PrevisualizarOperacionesView(OperacionTemplateMixin):
     Genera una representación JSON y un Excel para revisión.
     """
 
-    template_name = "operaciones/preview.html"
+    template_name = "listados/preview.html"
 
     def get(self, request, *args, **kwargs):
         base_instance = self.base_request
@@ -514,6 +514,12 @@ class PrevisualizarOperacionesView(OperacionTemplateMixin):
 
 
 # Vista para enviar operaciones serializadas
+import logging
+
+
+logger = logging.getLogger("operaciones")
+
+
 class EnviarOperacionesView(BaseRequestMixin, View):
     """
     Vista para enviar operaciones serializadas al servicio SSN.
@@ -521,33 +527,39 @@ class EnviarOperacionesView(BaseRequestMixin, View):
     """
 
     def get(self, request, *args, **kwargs):
-        # Obtener la solicitud base y las operaciones
         base_instance = self.base_request
         operations = SessionService.get_operations_models(request)
 
-        # Verificar que haya operaciones para enviar
+        # Determinar si permitimos envío vacío (solo para solicitudes semanales)
+        allow_empty = False
         if not operations:
-            logger.warning(
-                f"Intento de enviar solicitud {base_instance.uuid} sin operaciones"
-            )
-            messages.error(request, "No hay operaciones para enviar.")
-            return redirect(
-                "operaciones:lista_operaciones", uuid=str(base_instance.uuid)
-            )
+            if base_instance.tipo_entrega == "Semanal":
+                allow_empty = True
+                logger.info(
+                    f"Envío vacío permitido para solicitud semanal {base_instance.uuid}"
+                )
+            else:
+                logger.warning(
+                    f"Intento de enviar solicitud {base_instance.uuid} sin operaciones"
+                )
+                messages.error(request, "No hay operaciones para enviar.")
+                return redirect(
+                    "operaciones:lista_operaciones", uuid=str(base_instance.uuid)
+                )
 
-        # Registrar el intento de envío
         logger.info(
-            f"Enviando solicitud {base_instance.uuid} con {len(operations)} operaciones. "
+            f"Enviando solicitud {base_instance.uuid} "
+            f"con {len(operations)} operaciones "
+            f"(allow_empty={allow_empty}). "
             f"Usuario: {request.user.username if request.user.is_authenticated else 'Anónimo'}"
         )
 
-        # Inicializar el servicio de envío y ejecutar
         sender = SolicitudSenderService(base_instance, operations)
         try:
-            response_data, status_code = sender.enviar()
+            # Pasamos el flag allow_empty al servicio
+            response_data, status_code = sender.enviar(allow_empty=allow_empty)
 
-            # Registrar la respuesta
-            if status_code >= 200 and status_code < 300:
+            if 200 <= status_code < 300:
                 logger.info(f"Envío exitoso para solicitud {base_instance.uuid}")
                 return self.handle_success(request, base_instance, response_data)
             else:
@@ -555,9 +567,10 @@ class EnviarOperacionesView(BaseRequestMixin, View):
                     f"Error en envío para solicitud {base_instance.uuid}. Código: {status_code}"
                 )
                 return self.handle_error(request, base_instance, response_data)
+
         except Exception as e:
             logger.exception(
-                f"Error durante el envío de solicitud {base_instance.uuid}: {str(e)}"
+                f"Error inesperado durante el envío de solicitud {base_instance.uuid}: {e}"
             )
             messages.error(
                 request, f"Error inesperado al enviar la solicitud: {str(e)}"
@@ -567,69 +580,40 @@ class EnviarOperacionesView(BaseRequestMixin, View):
             )
 
     def handle_success(self, request, base_instance, response_data):
-        # Obtener el mensaje de éxito
         success_message = response_data.get(
             "message", "Solicitud enviada correctamente."
         )
         messages.success(request, success_message)
 
-        # Limpiar la sesión tras envío exitoso
         SessionService.clear_operations(request)
-        logger.info(
-            f"Sesión limpiada tras envío exitoso de solicitud {base_instance.uuid}"
-        )
+        logger.info(f"Sesión limpiada tras envío exitoso de {base_instance.uuid}")
 
-        # Proporcionar un enlace para recuperación futura
         self.add_recovery_link(request, base_instance)
-
-        # Determinar URL de redirección tras éxito
         return redirect(self.get_success_url())
 
     def handle_error(self, request, base_instance, response_data):
-        # Obtener el mensaje principal de error
         error_message = response_data.get(
             "message", "Error desconocido al enviar la solicitud."
         )
-
-        # Verificar si hay una lista de errores específicos
-        errors_list = response_data.get("errors", [])
-
-        # Mostrar el mensaje principal de error
         messages.error(request, error_message)
 
-        # Mostrar cada error específico como un mensaje independiente
-        for error in errors_list:
-            messages.error(request, error)
+        for err in response_data.get("errors", []):
+            messages.error(request, err)
 
-        # Registrar los errores detallados en el log
-        if errors_list:
-            logger.error(
-                f"Errores detallados para solicitud {base_instance.uuid}: {errors_list}"
-            )
-
-        # Redirigir a la vista de lista para permitir verificar/corregir
         return redirect("operaciones:lista_operaciones", uuid=str(base_instance.uuid))
 
     def add_recovery_link(self, request, base_instance):
         uuid_str = str(base_instance.uuid)
-        recover_url = (
-            reverse("operaciones:solicitud_base") + f"?recover_uuid={uuid_str}"
-        )
-        logger.debug(f"Generando enlace de recuperación para solicitud {uuid_str}")
+        link = reverse("operaciones:solicitud_base") + f"?recover_uuid={uuid_str}"
         messages.info(
             request,
-            f"Si necesita modificar esta solicitud, puede recuperarla usando este "
-            f"<a href='{recover_url}' class='text-blue-500 underline'>enlace</a>.",
+            f"Para recuperar o modificar esta solicitud más tarde, "
+            f"use este <a href='{link}' class='text-blue-500 underline'>enlace</a>.",
         )
 
     def get_success_url(self):
-        # Redireccionar a la página de inicio si está configurada
-        if hasattr(settings, "HOME_URL") and settings.HOME_URL:
-            logger.debug(f"Redirigiendo a HOME_URL: {settings.HOME_URL}")
+        if getattr(settings, "HOME_URL", None):
             return settings.HOME_URL
-
-        # Como alternativa, redirigir a la página de solicitud base
-        logger.debug("Redirigiendo a la página de solicitud base")
         return reverse("operaciones:solicitud_base")
 
 
@@ -640,7 +624,7 @@ class BaseRequestListView(PaginationMixin, StandaloneTemplateMixin):
     Muestra una tabla con las solicitudes y su estado.
     """
 
-    template_name = "operaciones/lista_solicitudes.html"
+    template_name = "listados/lista_solicitudes.html"
     titulo = "Listado de Solicitudes"
 
     def get_header_buttons(self):

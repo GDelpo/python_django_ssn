@@ -1,4 +1,4 @@
-{% extends "operaciones/_base.html" %}
+{% extends "listados/_base.html" %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -91,6 +91,6 @@
   </div>
 
   {% if solicitudes %}
-    {% include "operaciones/_pagination.html" with operations=solicitudes %}
+    {% include "partials/_pagination.html" with operations=solicitudes %}
   {% endif %}
 {% endblock %}

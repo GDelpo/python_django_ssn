@@ -3,7 +3,7 @@
 
 {% block content %}
   {% block extra_info %}
-    {% include "../_extra_info.html" %}
+    {% include "partials/_extra_info.html" %}
   {% endblock %}
 
   <div class="max-w-3xl mx-auto">
@@ -12,9 +12,9 @@
     {% block card_content %}
       {% if operations %}
         <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6">
-          {% include "./_table.html" %}
+          {% include "partials/_table.html" %}
         </div>
-        {% include "./_pagination.html" %}
+        {% include "partials/_pagination.html" %}
       {% else %}
         <div class="flex flex-col items-center justify-center py-12 text-center">
           <i class="fas fa-file-alt text-gray-300 text-5xl mb-4"></i>

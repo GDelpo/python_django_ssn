@@ -1,4 +1,4 @@
-{% extends "./_base.html" %}
+{% extends "formularios/_base.html" %}
 
 {% block title %}Formulario de Solicitud{% endblock %}
 
@@ -44,7 +44,7 @@
 {% block form_fields %}
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
     {% for field in form %}
-      {% include "./_field.html" with field=field special_fields="cronograma_semanal cronograma_mensual" %}
+      {% include "partials/_field.html"  with field=field special_fields="cronograma_semanal cronograma_mensual" %}
     {% endfor %}
   </div>
 {% endblock %}

@@ -4,7 +4,6 @@ Este módulo genera automáticamente la configuración de logging basada
 en la lista de apps proporcionada, sin necesidad de configuración manual.
 """
 
-from pathlib import Path
 
 
 def get_logging_config(debug_mode, logs_dir, apps=None):

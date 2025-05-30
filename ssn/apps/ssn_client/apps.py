@@ -13,17 +13,25 @@ class SsnClientConfig(AppConfig):
 
     def ready(self):
         # Verificar si estamos en un comando de manejo no relacionado con el cliente
-        management_commands = ['tailwind', 'collectstatic', 'makemigrations', 'migrate', 'shell']
-        is_management_command = any(cmd in ' '.join(sys.argv) for cmd in management_commands)
-        
+        management_commands = [
+            "tailwind",
+            "collectstatic",
+            "makemigrations",
+            "migrate",
+            "shell",
+        ]
+        is_management_command = any(
+            cmd in " ".join(sys.argv) for cmd in management_commands
+        )
+
         # Verificar si estamos en fase de construcción con SECRET_KEY dummy
-        is_build_env = os.environ.get('SECRET_KEY') in ['dummy', 'nothing']
-        
+        is_build_env = os.environ.get("SECRET_KEY") in ["dummy", "nothing"]
+
         # Si estamos ejecutando ciertos comandos o en fase de construcción,
         # no inicializar el cliente
         if is_management_command or is_build_env:
             return
-        
+
         try:
             # Intentar inicializar el cliente normalmente
             SsnClientConfig.ssn_client = SsnService(
@@ -37,5 +45,6 @@ class SsnClientConfig(AppConfig):
         except Exception as e:
             # Si hay un error, registrar el error
             import logging
+
             logger = logging.getLogger("ssn_client")
             logger.warning(f"No se pudo inicializar el cliente SSN: {str(e)}")

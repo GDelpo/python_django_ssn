@@ -1,11 +1,11 @@
-{% extends "./_base.html" %}
+{% extends "formularios/_base.html" %}
 
 {% block title %}Tipo de Operación{% endblock %}
 
 {% block form_fields %}
   <div class="space-y-4">
     {% for field in form %}
-      {% include "./_field.html" with field=field %}
+      {% include "partials/_field.html"  with field=field %}
     {% endfor %}
   </div>
 {% endblock %}
@@ -14,9 +14,31 @@
 {% endblock %}
 {% block extra_buttons %}
   {% for key, value in extra_info %}
-    {% if key == "Operaciones" and value|length > 0 %}
-      {% url 'operaciones:lista_operaciones' uuid=base_request.uuid as lista_url %}
-      {% include "componentes/link_button.html" with href=lista_url label="Ver Operaciones" icon="fas fa-list" color="warning" %}
+    {% if key == "Operaciones" %}
+      {# 1) Si ya hay operaciones, muestro “Ver Operaciones” #}
+      {% if value|length > 0 %}
+        {% url 'operaciones:lista_operaciones' uuid=base_request.uuid as lista_url %}
+        {% include "componentes/link_button.html" with href=lista_url label="Ver Operaciones" icon="fas fa-list" color="warning" %}
+      {# 2) Si NO hay operaciones y es Semanal, muestro “Enviar solicitud vacía” #}
+      {% elif base_request.tipo_entrega == "Semanal" %}
+        {% url 'operaciones:enviar_operaciones' uuid=base_request.uuid as empty_url %}
+        {% include "componentes/link_button.html" with href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud vacía" icon="fas fa-paper-plane" color="danger" %}
+      {% endif %}
     {% endif %}
   {% endfor %}
 {% endblock %}
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const btn = document.getElementById("sendEmptyBtn");
+    if (btn) {
+      btn.addEventListener("click", function(e) {
+        if (!confirm("¿Estás seguro de enviar la solicitud vacía?")) {
+          e.preventDefault();
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
+

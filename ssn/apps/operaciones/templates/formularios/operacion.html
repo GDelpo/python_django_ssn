@@ -1,4 +1,4 @@
-{% extends "./_base.html" %}
+{% extends "formularios/_base.html" %}
 
 {% block title %}Formulario de Operación{% endblock %}
 
@@ -13,7 +13,7 @@
         {# Renderizamos tipo_operacion primero #}
         {% for field in form %}
           {% if field.name == "tipo_operacion" or field.name == "codigo_afectacion" %}
-            {% include "./_field.html" with field=field special_fields="tipo_operacion codigo_afectacion" %}
+            {% include "partials/_field.html"  with field=field special_fields="tipo_operacion codigo_afectacion" %}
           {% endif %}
         {% endfor %}
       </div>
@@ -27,7 +27,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% for field in form %}
           {% if field.name != "tipo_operacion" and field.name != "codigo_afectacion" and field.name != "comprobante" %}
-            {% include "./_field.html" with field=field special_fields="tipo_operacion codigo_afectacion cant_especies" %}
+            {% include "partials/_field.html"  with field=field special_fields="tipo_operacion codigo_afectacion cant_especies" %}
           {% endif %}
         {% endfor %}
       </div>
@@ -38,7 +38,7 @@
       <h3 class="text-lg font-semibold text-blue-700 mb-3">
         <i class="fas fa-file-upload mr-2"></i> Documentación
       </h3>
-      {% include "./_field.html" with field=form.comprobante special_fields="comprobante" %}
+      {% include "partials/_field.html"  with field=form.comprobante special_fields="comprobante" %}
     </div>
 
     {# Si existen los subformularios para detalle A y B, se renderizan #}
@@ -50,7 +50,7 @@
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {% for field in form.detalle_a_form %}
-            {% include "./_field.html" with field=field %}
+            {% include "partials/_field.html"  with field=field %}
           {% endfor %}
         </div>
       </div>
@@ -64,7 +64,7 @@
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           {% for field in form.detalle_b_form %}
-            {% include "./_field.html" with field=field %}
+            {% include "partials/_field.html"  with field=field %}
           {% endfor %}
         </div>
       </div>
