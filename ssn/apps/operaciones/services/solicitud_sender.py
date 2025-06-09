@@ -57,6 +57,7 @@ class SolicitudSenderService:
         )
         if self._is_error_status(entrega_status):
             logger.error(f"Error en entrega{tipo_entrega}: {entrega_response}")
+            self._save_response(payload, entrega_response, entrega_status, error=True)
             return entrega_response, entrega_status
 
         # 4) Paso 2: confirmar entrega
