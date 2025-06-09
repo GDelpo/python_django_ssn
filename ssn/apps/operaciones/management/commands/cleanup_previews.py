@@ -17,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--max-age-minutes",
             type=int,
-            default=5,
+            default=settings.PREVIEW_MAX_AGE_MINUTES,
             help="Maximum age in minutes for preview files to keep",
         )
 
@@ -51,4 +51,3 @@ class Command(BaseCommand):
 
         logger.info("Removed %s preview file(s)", removed)
         self.stdout.write(self.style.SUCCESS(f"Removed {removed} file(s)."))
-
