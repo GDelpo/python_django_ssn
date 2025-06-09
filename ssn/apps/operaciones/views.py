@@ -716,9 +716,7 @@ class BaseRequestListView(BreadcrumbMixin, PaginationMixin, StandaloneTemplateMi
         SessionService.clear_operations(self.request)
 
         logger.debug("Obteniendo todas las solicitudes base")
-        solicitudes = (
-            BaseRequestModel.objects.all()
-        )  # Ya vienen ordenadas por -created_at revisar model
+        solicitudes = BaseRequestModel.objects.all().prefetch_related("respuestas")
         solicitudes_page, paginator = self.paginate_queryset(solicitudes)
 
         context["solicitudes"] = solicitudes_page
