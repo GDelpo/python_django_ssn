@@ -213,6 +213,20 @@ docker-compose exec certbot certbot renew
 docker-compose restart nginx
 ```
 
+### Limpieza de archivos de previews
+
+Para eliminar archivos temporales generados en `media/previews`, puedes usar el comando:
+
+```bash
+python manage.py cleanup_previews --max-age-minutes 5
+```
+
+Programar este comando en `cron` cada 15 minutos mantendrá limpia la carpeta:
+
+```cron
+*/15 * * * * cd /ruta/a/python_django_ssn/ssn && ./manage.py cleanup_previews --max-age-minutes 5
+```
+
 ## 🛡️ Seguridad
 
 Este repositorio está configurado para no incluir archivos con información sensible.
