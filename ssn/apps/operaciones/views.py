@@ -10,7 +10,6 @@ from django.views.generic import DeleteView, FormView, UpdateView
 # Configuración del logger
 logger = logging.getLogger("operaciones")
 
-
 from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
 from .helpers import (
     BaseRequestMixin,
@@ -22,21 +21,28 @@ from .helpers import (
     StandaloneTemplateMixin,
     get_mapping_model,
 )
+from .helpers.mixins import BreadcrumbMixin
 from .models import BaseRequestModel
 from .services import SessionService, SolicitudPreviewService, SolicitudSenderService
 
 
 # Vista para crear la solicitud base
-class BaseRequestFormView(StandaloneFormMixin, FormView):
+class BaseRequestFormView(BreadcrumbMixin, StandaloneFormMixin, FormView):
     """
     Vista para crear o recuperar la solicitud base que contendrá las operaciones.
     Punto de entrada principal del flujo de creación de solicitudes.
     """
 
-    template_name = "formularios/solicitud.html"
+    template_name = "forms/solicitud.html"
     form_class = BaseRequestForm
     titulo = "Formulario de Solicitud"
     boton_texto = "Agregar Operaciones"
+
+    def get_breadcrumbs(self):
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Nueva Solicitud", None),
+        ]
 
     def get(self, request, *args, **kwargs):
         recover_uuid = request.GET.get("recover_uuid")
@@ -90,16 +96,23 @@ class BaseRequestFormView(StandaloneFormMixin, FormView):
 
 
 # Vista para la selección del tipo de operación
-class TipoOperacionFormView(OperacionFormMixin):
+class TipoOperacionFormView(BreadcrumbMixin, OperacionFormMixin):
     """
     Vista para la selección del tipo de operación a crear.
     Segundo paso en el flujo de creación de solicitudes.
     """
 
-    template_name = "formularios/seleccion_tipo_operacion.html"
+    template_name = "forms/seleccion_tipo_operacion.html"
     form_class = TipoOperacionForm
     titulo = "Selecciona el Tipo de Operación"
     boton_texto = "Continuar"
+
+    def get_breadcrumbs(self):
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Solicitud Base", reverse("operaciones:solicitud_base")),
+            ("Seleccionar Tipo", None),
+        ]
 
     def form_valid(self, form):
         # Obtener el valor de la opción seleccionada
@@ -153,15 +166,24 @@ class TipoOperacionFormView(OperacionFormMixin):
 
 
 # Vista para crear una nueva operación
-class OperacionCreateView(OperacionFormMixin):
+class OperacionCreateView(BreadcrumbMixin, OperacionFormMixin):
     """
     Vista para crear una nueva operación del tipo seleccionado.
     Tercer paso en el flujo de creación de solicitudes.
     """
 
-    template_name = "formularios/operacion.html"
+    template_name = "forms/operacion.html"
     titulo = "Formulario de Operación"
     boton_texto = "Guardar Operación"
+
+    def get_breadcrumbs(self):
+        uuid = self.base_request.uuid
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Solicitudes", reverse("operaciones:lista_solicitudes")),
+            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            ("Nueva Operación", None),
+        ]
 
     def dispatch(self, request, *args, **kwargs):
         self.tipo_operacion = kwargs.get("tipo_operacion")
@@ -218,14 +240,22 @@ class OperacionCreateView(OperacionFormMixin):
 
 
 # Vista para listar operaciones
-class OperationTableView(PaginationMixin, OperacionTemplateMixin):
+class OperationTableView(BreadcrumbMixin, PaginationMixin, OperacionTemplateMixin):
     """
     Vista para listar todas las operaciones asociadas a una solicitud.
     Muestra la tabla con paginación y opciones de acción.
     """
 
-    template_name = "listados/lista.html"
+    template_name = "lists/lista.html"
     titulo = "Tabla de Operaciones"
+
+    def get_breadcrumbs(self):
+        uuid = self.base_request.uuid
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Solicitudes", reverse("operaciones:lista_solicitudes")),
+            (f"Solicitud {uuid}", None),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -302,14 +332,23 @@ class OperationTableView(PaginationMixin, OperacionTemplateMixin):
 
 
 # Vista para ver detalles de una operación en modo solo lectura
-class OperacionViewDetailView(OperacionModelViewMixin, OperacionTemplateMixin):
+class OperacionViewDetailView(BreadcrumbMixin, OperacionModelViewMixin, OperacionTemplateMixin):
     """
     Vista para ver detalles de una operación en modo solo lectura.
     Utiliza el mismo template que el formulario pero con campos deshabilitados.
     """
 
-    template_name = "formularios/operacion_readonly.html"
+    template_name = "forms/operacion_readonly.html"
     titulo = "Detalles de Operación"
+
+    def get_breadcrumbs(self):
+        uuid = self.base_request.uuid
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Solicitudes", reverse("operaciones:lista_solicitudes")),
+            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            ("Ver Detalle", None),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -340,15 +379,24 @@ class OperacionViewDetailView(OperacionModelViewMixin, OperacionTemplateMixin):
 
 
 # Vista para editar una operación
-class OperacionEditView(OperacionModelViewMixin, UpdateView, OperacionFormMixin):
+class OperacionEditView(BreadcrumbMixin, OperacionModelViewMixin, UpdateView, OperacionFormMixin):
     """
     Vista para editar una operación existente.
     Permite modificar los datos de una operación previamente creada.
     """
 
-    template_name = "formularios/operacion.html"
+    template_name = "forms/operacion.html"
     titulo = "Editar Operación"
     boton_texto = "Actualizar Operación"
+
+    def get_breadcrumbs(self):
+        uuid = self.base_request.uuid
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Solicitudes", reverse("operaciones:lista_solicitudes")),
+            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            ("Editar Operación", None),
+        ]
 
     def dispatch(self, request, *args, **kwargs):
         # Verificar si la solicitud ya fue enviada
@@ -386,15 +434,24 @@ class OperacionEditView(OperacionModelViewMixin, UpdateView, OperacionFormMixin)
 
 
 # Vista para eliminar una operación
-class OperacionDeleteView(OperacionModelViewMixin, DeleteView, OperacionFormMixin):
+class OperacionDeleteView(BreadcrumbMixin, OperacionModelViewMixin, DeleteView, OperacionFormMixin):
     """
     Vista para eliminar una operación existente.
     Solicita confirmación antes de eliminar.
     """
 
-    template_name = "formularios/operacion_confirm_delete.html"
+    template_name = "forms/operacion_confirm_delete.html"
     titulo = "Eliminar operación"
     boton_texto = "Eliminar"
+
+    def get_breadcrumbs(self):
+        uuid = self.base_request.uuid
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Solicitudes", reverse("operaciones:lista_solicitudes")),
+            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            ("Eliminar Operación", None),
+        ]
 
     def dispatch(self, request, *args, **kwargs):
         # Verificar si la solicitud ya fue enviada
@@ -436,13 +493,22 @@ class OperacionDeleteView(OperacionModelViewMixin, DeleteView, OperacionFormMixi
 
 
 # Vista para previsualizar operaciones serializadas
-class PrevisualizarOperacionesView(OperacionTemplateMixin):
+class PrevisualizarOperacionesView(BreadcrumbMixin, OperacionTemplateMixin):
     """
     Vista para previsualizar operaciones antes de enviar.
     Genera una representación JSON y un Excel para revisión.
     """
 
-    template_name = "listados/preview.html"
+    template_name = "lists/preview.html"
+
+    def get_breadcrumbs(self):
+        uuid = self.base_request.uuid
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Solicitudes", reverse("operaciones:lista_solicitudes")),
+            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            ("Vista Previa", None),
+        ]
 
     def get(self, request, *args, **kwargs):
         base_instance = self.base_request
@@ -513,13 +579,7 @@ class PrevisualizarOperacionesView(OperacionTemplateMixin):
         return context
 
 
-# Vista para enviar operaciones serializadas
-import logging
-
-
-logger = logging.getLogger("operaciones")
-
-
+# Vista para enviar operaciones serializadas al servicio SSN
 class EnviarOperacionesView(BaseRequestMixin, View):
     """
     Vista para enviar operaciones serializadas al servicio SSN.
@@ -551,7 +611,6 @@ class EnviarOperacionesView(BaseRequestMixin, View):
             f"Enviando solicitud {base_instance.uuid} "
             f"con {len(operations)} operaciones "
             f"(allow_empty={allow_empty}). "
-            f"Usuario: {request.user.username if request.user.is_authenticated else 'Anónimo'}"
         )
 
         sender = SolicitudSenderService(base_instance, operations)
@@ -618,14 +677,20 @@ class EnviarOperacionesView(BaseRequestMixin, View):
 
 
 # Vista para listar todas las solicitudes base
-class BaseRequestListView(PaginationMixin, StandaloneTemplateMixin):
+class BaseRequestListView(BreadcrumbMixin, PaginationMixin, StandaloneTemplateMixin):
     """
     Vista para listar todas las solicitudes base existentes.
     Muestra una tabla con las solicitudes y su estado.
     """
 
-    template_name = "listados/lista_solicitudes.html"
+    template_name = "lists/lista_solicitudes.html"
     titulo = "Listado de Solicitudes"
+
+    def get_breadcrumbs(self):
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Listado de Solicitudes", None),
+        ]
 
     def get_header_buttons(self):
         """

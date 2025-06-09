@@ -1,11 +1,11 @@
-{% extends "formularios/_base.html" %}
+{% extends "forms/partials/_base.html" %}
 
 {% block title %}Tipo de Operación{% endblock %}
 
 {% block form_fields %}
-  <div class="space-y-4">
+  <div class="grid grid-cols-1 gap-6">
     {% for field in form %}
-      {% include "partials/_field.html"  with field=field %}
+      {% include "forms/partials/_field.html"  with field=field %}
     {% endfor %}
   </div>
 {% endblock %}
@@ -22,23 +22,17 @@
       {# 2) Si NO hay operaciones y es Semanal, muestro “Enviar solicitud vacía” #}
       {% elif base_request.tipo_entrega == "Semanal" %}
         {% url 'operaciones:enviar_operaciones' uuid=base_request.uuid as empty_url %}
-        {% include "componentes/link_button.html" with href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud vacía" icon="fas fa-paper-plane" color="danger" %}
+        {% include "componentes/link_button.html" with href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud sin operaciones" icon="fas fa-paper-plane" color="danger" %}
       {% endif %}
     {% endif %}
   {% endfor %}
 {% endblock %}
 {% block extra_js %}
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const btn = document.getElementById("sendEmptyBtn");
-    if (btn) {
-      btn.addEventListener("click", function(e) {
-        if (!confirm("¿Estás seguro de enviar la solicitud vacía?")) {
-          e.preventDefault();
-        }
-      });
-    }
-  });
-</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      initConfirmButton('#sendEmptyBtn', '¿Estás seguro de enviar la solicitud vacía?');
+    });
+  </script>
 {% endblock %}
+
 

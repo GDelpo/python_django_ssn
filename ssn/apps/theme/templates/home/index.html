@@ -1,4 +1,4 @@
-{% extends "base/base.html" %} {% load static tailwind_tags %} {% block title%}Inicio | Sistema de Operaciones SSN{% endblock %}
+{% extends "base.html" %} {% load static tailwind_tags %} {% block title%}Inicio | Sistema de Operaciones SSN{% endblock %}
 {% block full_width_content %}
 <!-- Hero Section a ancho completo -->
   <div
@@ -318,7 +318,8 @@
       </div>
     </div>
   </div>
-{% endblock %} {% block extra_js %}
+{% endblock %}
+{% block extra_js %}
   <script>
     document.addEventListener("DOMContentLoaded", function () {
     // Animación para secciones principales
@@ -330,8 +331,8 @@
       });
     });
   </script>
-
-{% endblock %} {% block extra_css %}<style>
+{% endblock %}
+{% block extra_css %}<style>
   .animate-fadeIn {
     animation: fadeIn 0.8s ease forwards;
   }

@@ -1,4 +1,4 @@
-{% extends "listados/_base.html" %}
+{% extends "lists/partials/_base.html" %}
 {% block title %}Vista Previa de Solicitud{% endblock %}
 
 {% block content %}
@@ -7,6 +7,24 @@
   {% endblock %}
 
   <div class="max-w-3xl mx-auto">
+    {# ======== BLOQUE DE BREADCRUMBS ======== #}
+    {% if breadcrumb_items %}
+      <nav class="mb-4 text-sm text-gray-600" aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center space-x-2">
+          {% for label,url in breadcrumb_items %}
+            <li class="flex items-center">
+              {% if url %}
+                <a href="{{ url }}" class="hover:underline">{{ label }}</a>
+              {% else %}
+                <span class="text-gray-500">{{ label }}</span>
+              {% endif %}
+              {% if not forloop.last %}<span class="mx-2">/</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+      </nav>
+    {% endif %}
+    {# ======== FIN DE BREADCRUMBS ======== #}
     {% include "componentes/card.html" with title="Vista Previa de Solicitud" header_buttons=header_buttons %}
 
     {% block card_content %}
@@ -29,7 +47,7 @@
       </div>
       
       <!-- Botones para copiar y enviar por mail, en grid con separación -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-3">
         {% include "componentes/button.html" with id="copyButton" href=edit_url icon="fas fa-copy" label="Copiar JSON" color="primary" %}
         {% include "componentes/link_button.html" with href=mailto_link icon="fas fa-share" label="Enviar por mail" color="warning" %}
       </div>
@@ -43,35 +61,25 @@
 
 {% block extra_js %}
 <script>
-  // Agregamos verificación para el botón enviar (podría no existir en modo solo lectura)
-  const enviarBtn = document.getElementById("enviarSolicitud");
-  if (enviarBtn) {
-    enviarBtn.addEventListener("click", function(event) {
-      // Muestra un cuadro de confirmación
-      if (!confirm("¿Estás seguro de que quieres enviar la solicitud?")) {
-        // Si el usuario cancela, se evita el envío
-        event.preventDefault();
-      }
-    });
-  }
+  document.addEventListener('DOMContentLoaded', function() {
+    initConfirmButton(
+      '#enviarSolicitud',
+      '¿Estás seguro de que quieres enviar la solicitud?'
+    );
 
-  document.getElementById("copyButton").addEventListener("click", function() {
-    const jsonText = document.getElementById("jsonContent").innerText;
-    navigator.clipboard.writeText(jsonText)
-      .then(() => { alert("JSON copiado al portapapeles"); })
-      .catch(err => { alert("Error al copiar el JSON: " + err); });
-  });
+    initCopyToClipboard(
+      '#copyButton',
+      '#jsonContent',
+      'JSON copiado al portapapeles',
+      'Error al copiar el JSON'
+    );
 
-  document.getElementById("uuidSolicitud").addEventListener("click", function () {
-    const textToCopy = this.innerText;
-  
-    navigator.clipboard.writeText(textToCopy)
-      .then(() => {
-        alert("UUID copiado al portapapeles");
-      })
-      .catch(err => {
-        alert("Error al copiar el UUID: " + err);
-      });
+    initCopyToClipboard(
+      '#uuidSolicitud',
+      '#uuidSolicitud',
+      'UUID copiado al portapapeles',
+      'Error al copiar el UUID'
+    );
   });
 </script>
 {% endblock %}

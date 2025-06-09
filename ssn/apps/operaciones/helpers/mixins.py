@@ -14,6 +14,30 @@ from .model_utils import get_mapping_model
 logger = logging.getLogger("operaciones")
 
 
+class BreadcrumbMixin:
+    """
+    Mixin que inyecta `breadcrumb_items` en el contexto de la vista.
+    Las vistas que hereden de esto deben implementar get_breadcrumbs().
+    """
+
+    def get_breadcrumbs(self):
+        """
+        Debe devolver una lista de tuplas (label, url).
+        Si url es None, se muestra el label sin enlace (último breadcrumb).
+        Ejemplo:
+            return [
+                ("Inicio", reverse("theme:index")),
+                ("Listado de Solicitudes", None),
+            ]
+        """
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = self.get_breadcrumbs()
+        return context
+
+
 class HeaderButtonMixin:
     """
     Mixin que proporciona métodos para generar botones de navegación en el encabezado.
@@ -265,7 +289,7 @@ class OperacionModelViewMixin:
         pk = self.kwargs.get("pk")
 
         logger.debug(
-            f"Recuperando objeto con ID {pk} del tipo {self.kwargs.get('tipo_operacion')}"
+            f"Recuperando obejto con ID {pk} del tipo {self.kwargs.get('tipo_operacion')}"
         )
         try:
             return get_object_or_404(queryset, pk=pk)
