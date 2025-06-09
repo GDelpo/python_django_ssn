@@ -17,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--max-age-minutes",
             type=int,
-            default=5,
+            default=settings.PREVIEW_MAX_AGE_MINUTES,
             help="Maximum age in minutes for preview files to keep",
         )
 

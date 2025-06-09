@@ -237,6 +237,14 @@ SSN_API_RETRY_DELAY = get_build_config(
     "SSN_API_RETRY_DELAY", default=5, build_value=5, cast=int
 )
 
+# Tiempo máximo en minutos para conservar archivos de previsualización
+PREVIEW_MAX_AGE_MINUTES = get_build_config(
+    "PREVIEW_MAX_AGE_MINUTES",
+    default=5,
+    build_value=5,
+    cast=int,
+)
+
 
 # Configuración de logging
 # Lista de todas las aplicaciones para las que se quiere configurar logging

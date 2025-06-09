@@ -215,6 +215,8 @@ docker-compose restart nginx
 
 ### Limpieza de archivos de previews
 
+Define el tiempo de retención en el archivo `.env` con la variable `PREVIEW_MAX_AGE_MINUTES`.
+Si no se indica `--max-age-minutes`, se usará el valor configurado en esa variable.
 Para eliminar archivos temporales generados en `media/previews`, puedes usar el comando:
 
 ```bash
