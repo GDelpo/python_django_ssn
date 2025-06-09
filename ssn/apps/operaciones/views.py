@@ -2,7 +2,7 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DeleteView, FormView, UpdateView
@@ -725,4 +725,40 @@ class BaseRequestListView(BreadcrumbMixin, PaginationMixin, StandaloneTemplateMi
         logger.debug(
             f"Listando {len(solicitudes_page)} solicitudes de {paginator.count} total"
         )
+        return context
+
+
+class SolicitudResponseDetailView(BreadcrumbMixin, StandaloneTemplateMixin):
+    """Muestra el detalle completo de una respuesta almacenada."""
+
+    template_name = "lists/respuesta_detalle.html"
+    titulo = "Detalle de Respuesta"
+
+    def dispatch(self, request, *args, **kwargs):
+        from .models import SolicitudResponse
+
+        self.response_obj = get_object_or_404(SolicitudResponse, pk=kwargs.get("pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_breadcrumbs(self):
+        return [
+            ("Inicio", reverse("theme:index")),
+            ("Listado de Solicitudes", reverse("operaciones:lista_solicitudes")),
+            ("Detalle de Respuesta", None),
+        ]
+
+    def get_context_data(self, **kwargs):
+        import json
+
+        context = super().get_context_data(**kwargs)
+        context["response_obj"] = self.response_obj
+        context["formatted_payload"] = json.dumps(
+            self.response_obj.payload_enviado, indent=4, ensure_ascii=False
+        )
+        context["formatted_response"] = json.dumps(
+            self.response_obj.respuesta, indent=4, ensure_ascii=False
+        )
+        context["header_buttons"] = [
+            self.get_back_button("operaciones:lista_solicitudes", use_uuid=False)
+        ]
         return context

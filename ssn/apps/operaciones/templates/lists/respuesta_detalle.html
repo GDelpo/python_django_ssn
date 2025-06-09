@@ -1,0 +1,25 @@
+{% extends "lists/partials/_base.html" %}
+{% block title %}Detalle de Respuesta{% endblock %}
+
+{% block card_content %}
+  <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6 overflow-hidden">
+    <h3 class="text-lg font-bold text-blue-600 truncate mb-6">
+      Solicitud ID:
+      <span id="uuidSolicitud" class="font-medium text-blue-800 italic cursor-pointer hover:text-blue-600 hover:underline transition duration-200">
+        {{ response_obj.solicitud.uuid }}
+      </span>
+    </h3>
+    <h4 class="text-md font-semibold mb-2">Payload Enviado</h4>
+    <pre id="payloadContent" class="bg-gray-50 p-3 border rounded mb-4 max-h-64 overflow-auto">{{ formatted_payload }}</pre>
+    <h4 class="text-md font-semibold mb-2">Respuesta Recibida</h4>
+    <pre id="responseContent" class="bg-gray-50 p-3 border rounded max-h-64 overflow-auto">{{ formatted_response }}</pre>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    initCopyToClipboard('#uuidSolicitud', '#uuidSolicitud', 'UUID copiado al portapapeles', 'Error al copiar el UUID');
+  });
+</script>
+{% endblock %}

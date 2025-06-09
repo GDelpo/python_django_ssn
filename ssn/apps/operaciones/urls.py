@@ -9,6 +9,7 @@ from .views import (
     OperacionEditView,
     OperacionViewDetailView,
     OperationTableView,
+    SolicitudResponseDetailView,
     PrevisualizarOperacionesView,
     TipoOperacionFormView,
 )
@@ -64,4 +65,10 @@ urlpatterns = [
     ),
     # Listado de todas las solicitudes base
     path("solicitudes/", BaseRequestListView.as_view(), name="lista_solicitudes"),
+    # Detalle de una respuesta generada
+    path(
+        "solicitudes/respuesta/<int:pk>/",
+        SolicitudResponseDetailView.as_view(),
+        name="detalle_respuesta",
+    ),
 ]

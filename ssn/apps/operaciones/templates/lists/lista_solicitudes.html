@@ -60,14 +60,15 @@
                 <div class="flex items-center justify-center md:justify-start">
                   {% with respuesta=solicitud.respuestas.first %}
                     {% if respuesta %}
+                      {% url 'operaciones:detalle_respuesta' pk=respuesta.id as resp_url %}
                       {% if respuesta.es_error %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <a href="{{ resp_url }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:underline">
                           <i class="fas fa-times-circle mr-1"></i>Error ({{ respuesta.status_http }})
-                        </span>
+                        </a>
                       {% else %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <a href="{{ resp_url }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:underline">
                           <i class="fas fa-check-circle mr-1"></i>OK ({{ respuesta.status_http }})
-                        </span>
+                        </a>
                       {% endif %}
                     {% else %}
                       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
