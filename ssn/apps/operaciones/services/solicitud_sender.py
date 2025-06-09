@@ -67,11 +67,13 @@ class SolicitudSenderService:
         )
         if self._is_error_status(confirm_status):
             logger.error(f"Error en confirmarEntrega{tipo_entrega}: {confirm_response}")
+            self._save_response(payload, confirm_response, confirm_status, error=True)
             return confirm_response, confirm_status
 
         # 5) Marcar como enviado
         self._mark_as_sent()
         logger.info(f"Solicitud {self.base_request.uuid} enviada correctamente")
+        self._save_response(payload, confirm_response, confirm_status, error=False)
         return confirm_response, confirm_status
 
     def _is_error_status(self, status_code: int) -> bool:
@@ -107,3 +109,18 @@ class SolicitudSenderService:
         self.base_request.send_at = datetime.datetime.now()
         self.base_request.save()
         logger.info(f"Solicitud {self.base_request.uuid} marcada como enviada")
+
+    def _save_response(self, payload: Dict[str, Any], response: Dict[str, Any], status: int, error: bool) -> None:
+        """Guarda la respuesta del servicio asociándola a la solicitud."""
+        from ..models import SolicitudResponse
+
+        SolicitudResponse.objects.create(
+            solicitud=self.base_request,
+            payload_enviado=payload,
+            respuesta=response,
+            status_http=status,
+            es_error=error,
+        )
+        logger.debug(
+            f"Respuesta registrada para {self.base_request.uuid} (error={error})"
+        )
