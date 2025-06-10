@@ -117,7 +117,13 @@ INTERNAL_IPS = [
 
 # NPM_BIN_PATH = "/usr/bin/npm"
 
-NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
+# NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
+
+# Configuración automática de la ruta de npm según el sistema operativo.
+if os.name == "nt":
+    NPM_BIN_PATH = Path("C:/Program Files/nodejs/npm.cmd")
+else:
+    NPM_BIN_PATH = Path("/usr/bin/npm")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
