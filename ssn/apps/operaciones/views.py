@@ -181,7 +181,10 @@ class OperacionCreateView(BreadcrumbMixin, OperacionFormMixin):
         return [
             ("Inicio", reverse("theme:index")),
             ("Solicitudes", reverse("operaciones:lista_solicitudes")),
-            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            (
+                f"Solicitud {uuid}",
+                reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid}),
+            ),
             ("Nueva Operación", None),
         ]
 
@@ -332,7 +335,9 @@ class OperationTableView(BreadcrumbMixin, PaginationMixin, OperacionTemplateMixi
 
 
 # Vista para ver detalles de una operación en modo solo lectura
-class OperacionViewDetailView(BreadcrumbMixin, OperacionModelViewMixin, OperacionTemplateMixin):
+class OperacionViewDetailView(
+    BreadcrumbMixin, OperacionModelViewMixin, OperacionTemplateMixin
+):
     """
     Vista para ver detalles de una operación en modo solo lectura.
     Utiliza el mismo template que el formulario pero con campos deshabilitados.
@@ -346,7 +351,10 @@ class OperacionViewDetailView(BreadcrumbMixin, OperacionModelViewMixin, Operacio
         return [
             ("Inicio", reverse("theme:index")),
             ("Solicitudes", reverse("operaciones:lista_solicitudes")),
-            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            (
+                f"Solicitud {uuid}",
+                reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid}),
+            ),
             ("Ver Detalle", None),
         ]
 
@@ -379,7 +387,9 @@ class OperacionViewDetailView(BreadcrumbMixin, OperacionModelViewMixin, Operacio
 
 
 # Vista para editar una operación
-class OperacionEditView(BreadcrumbMixin, OperacionModelViewMixin, UpdateView, OperacionFormMixin):
+class OperacionEditView(
+    BreadcrumbMixin, OperacionModelViewMixin, UpdateView, OperacionFormMixin
+):
     """
     Vista para editar una operación existente.
     Permite modificar los datos de una operación previamente creada.
@@ -394,7 +404,10 @@ class OperacionEditView(BreadcrumbMixin, OperacionModelViewMixin, UpdateView, Op
         return [
             ("Inicio", reverse("theme:index")),
             ("Solicitudes", reverse("operaciones:lista_solicitudes")),
-            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            (
+                f"Solicitud {uuid}",
+                reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid}),
+            ),
             ("Editar Operación", None),
         ]
 
@@ -434,7 +447,9 @@ class OperacionEditView(BreadcrumbMixin, OperacionModelViewMixin, UpdateView, Op
 
 
 # Vista para eliminar una operación
-class OperacionDeleteView(BreadcrumbMixin, OperacionModelViewMixin, DeleteView, OperacionFormMixin):
+class OperacionDeleteView(
+    BreadcrumbMixin, OperacionModelViewMixin, DeleteView, OperacionFormMixin
+):
     """
     Vista para eliminar una operación existente.
     Solicita confirmación antes de eliminar.
@@ -449,7 +464,10 @@ class OperacionDeleteView(BreadcrumbMixin, OperacionModelViewMixin, DeleteView, 
         return [
             ("Inicio", reverse("theme:index")),
             ("Solicitudes", reverse("operaciones:lista_solicitudes")),
-            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            (
+                f"Solicitud {uuid}",
+                reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid}),
+            ),
             ("Eliminar Operación", None),
         ]
 
@@ -506,7 +524,10 @@ class PrevisualizarOperacionesView(BreadcrumbMixin, OperacionTemplateMixin):
         return [
             ("Inicio", reverse("theme:index")),
             ("Solicitudes", reverse("operaciones:lista_solicitudes")),
-            (f"Solicitud {uuid}", reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid})),
+            (
+                f"Solicitud {uuid}",
+                reverse("operaciones:lista_operaciones", kwargs={"uuid": uuid}),
+            ),
             ("Vista Previa", None),
         ]
 

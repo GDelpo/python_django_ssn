@@ -1,11 +1,10 @@
-from pathlib import Path
+import logging
 import os
 import time
-import logging
+from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-
 
 logger = logging.getLogger("operaciones")
 

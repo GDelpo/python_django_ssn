@@ -9,8 +9,8 @@ from .views import (
     OperacionEditView,
     OperacionViewDetailView,
     OperationTableView,
-    SolicitudResponseDetailView,
     PrevisualizarOperacionesView,
+    SolicitudResponseDetailView,
     TipoOperacionFormView,
 )
 

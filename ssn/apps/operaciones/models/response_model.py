@@ -19,7 +19,9 @@ class SolicitudResponse(models.Model):
         help_text="Respuesta recibida del servicio SSN",
     )
     status_http = models.PositiveIntegerField(help_text="Código HTTP de la respuesta")
-    es_error = models.BooleanField(default=False, help_text="Indica si la respuesta fue un error")
+    es_error = models.BooleanField(
+        default=False, help_text="Indica si la respuesta fue un error"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

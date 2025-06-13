@@ -111,7 +111,13 @@ class SolicitudSenderService:
         self.base_request.save()
         logger.info(f"Solicitud {self.base_request.uuid} marcada como enviada")
 
-    def _save_response(self, payload: Dict[str, Any], response: Dict[str, Any], status: int, error: bool) -> None:
+    def _save_response(
+        self,
+        payload: Dict[str, Any],
+        response: Dict[str, Any],
+        status: int,
+        error: bool,
+    ) -> None:
         """Guarda la respuesta del servicio asociándola a la solicitud."""
         from ..models import SolicitudResponse
 

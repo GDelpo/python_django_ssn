@@ -5,7 +5,6 @@ en la lista de apps proporcionada, sin necesidad de configuración manual.
 """
 
 
-
 def get_logging_config(debug_mode, logs_dir, apps=None):
     """
     Genera la configuración de logging basada en el modo de ejecución

@@ -1,7 +1,8 @@
+import os
+import sys
+
 from django.apps import AppConfig
 from django.conf import settings
-import sys
-import os
 
 from .clients import SsnService
 

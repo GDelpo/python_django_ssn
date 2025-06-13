@@ -1,5 +1,5 @@
-from django.http import JsonResponse
 from django.db import connection
+from django.http import JsonResponse
 
 
 def health_check(request):
