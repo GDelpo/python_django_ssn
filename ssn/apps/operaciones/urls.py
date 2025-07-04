@@ -67,7 +67,7 @@ urlpatterns = [
     path(
         "<uuid:uuid>/respuesta/",
         SolicitudRespuestasListView.as_view(),
-        name="detalle_respuesta",
+        name="solicitud_respuesta",
     ),
     # Listado de todas las solicitudes base
     path("solicitudes/", SolicitudBaseListView.as_view(), name="lista_solicitudes"),

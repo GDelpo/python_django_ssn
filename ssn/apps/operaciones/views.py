@@ -449,14 +449,14 @@ class OperacionSendView(
             )
             SessionService.clear_base_request(request)
             # Ir al historial de respuestas de la solicitud:
-            return redirect("operaciones:solicitud_respuestas", pk=self.base_request.uuid)
+            return redirect("operaciones:solicitud_respuesta", pk=self.base_request.uuid)
         messages.error(
             request, response_data.get("message", "Error al enviar la solicitud.")
         )
         for err in response_data.get("errors", []):
             messages.error(request, err)
         # Mostrar historial de respuestas igual, para debugging:
-        return redirect("operaciones:solicitud_respuestas", pk=self.base_request.uuid)
+        return redirect("operaciones:solicitud_respuesta", pk=self.base_request.uuid)
 
 
 class SolicitudRespuestasListView(

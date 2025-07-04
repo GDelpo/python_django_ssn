@@ -1,68 +1,8 @@
 {% extends "base.html" %}
-{% load static tailwind_tags %}
-{% block title %}404 | Página no encontrada{% endblock %}
-
+{% block title %}404{% endblock %}
 {% block full_width_content %}
-  <div class="relative bg-gradient-to-r from-blue-700 to-blue-600 overflow-hidden w-full">
-    <div class="w-full">
-      <div class="relative z-10 pb-8 sm:pb-16 md:pb-20 lg:pb-28 xl:pb-32 flex flex-col items-center justify-center min-h-[40vh]">
-        <div class="sm:text-center">
-          <h1 class="text-7xl md:text-9xl font-extrabold text-white drop-shadow-lg">404</h1>
-          <h2 class="mt-6 text-3xl font-bold text-blue-200">Página no encontrada</h2>
-          <p class="mt-4 text-blue-100 text-lg md:text-xl max-w-xl mx-auto">
-            Ups, la página que buscás no existe o fue movida.<br>
-            Si llegaste aquí desde un enlace interno, podés volver al inicio o contactarnos.
-          </p>
-          <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-            <a
-              href="{% url 'home' %}"
-              class="px-8 py-3 rounded-md text-white bg-blue-900 hover:bg-blue-800 text-base font-medium shadow-md transition duration-300 flex items-center justify-center"
-            >
-              <i class="fas fa-home mr-2"></i>
-              Volver al Inicio
-            </a>
-            <a
-              href="mailto:{{ support_email }}"
-              class="px-8 py-3 rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 text-base font-medium shadow-md transition duration-300 flex items-center justify-center"
-            >
-              <i class="fas fa-headset mr-2"></i>
-              Contactar Soporte
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-{% endblock %}
-
-{% block content %}
-  <div class="min-h-[20vh]"></div>
-{% endblock %}
-
-{% block extra_js %}
-  <!-- Opcional: animación como en el home -->
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const hero = document.querySelector("h1");
-      hero.classList.add("animate-fadeIn");
-    });
-  </script>
-{% endblock %}
-
-{% block extra_css %}
-  <style>
-    .animate-fadeIn {
-      animation: fadeIn 0.8s ease forwards;
-    }
-    @keyframes fadeIn {
-      from {
-        opacity: 0.3;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  </style>
+<div class="text-center py-40">
+  <h1 class="text-6xl font-bold text-blue-700 mb-4">404</h1>
+  <p class="text-xl text-gray-700">Página no encontrada.</p>
+</div>
 {% endblock %}
