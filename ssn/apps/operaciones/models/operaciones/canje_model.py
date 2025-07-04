@@ -1,5 +1,5 @@
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.forms import ValidationError
 
 from ..base_model import BaseOperacionModel
 from .detalle_operacion_model import DetalleOperacionCanje

@@ -7,36 +7,30 @@ from .date_utils import (
 from .file_utils import comprobante_upload_path, validate_comprobante_file
 from .form_styles import CLASS_SELECT, apply_tailwind_style, disable_field
 from .mixins import (
-    BaseRequestMixin,
-    OperacionFormMixin,
-    OperacionModelViewMixin,
-    OperacionTemplateMixin,
-    PaginationMixin,
-    StandaloneFormMixin,
-    StandaloneTemplateMixin,
+    OperationReadonlyViewMixin,
+    OperationEditViewMixin,
+    DynamicModelMixin,
+    StandaloneViewMixin,
 )
 from .model_utils import get_mapping_model, get_related_names_map
 from .text_utils import camel_to_title, to_camel_case
 
-__all__ = [
-    "apply_tailwind_style",
-    "disable_field",
-    "CLASS_SELECT",
+__all_ = [
     "generate_monthly_options",
     "generate_week_options",
     "get_default_cronograma",
-    "get_mapping_model",
-    "to_camel_case",
+    "get_last_week_id",
     "comprobante_upload_path",
     "validate_comprobante_file",
-    "camel_to_title",
-    "BaseRequestMixin",
-    "OperacionFormMixin",
-    "OperacionModelViewMixin",
-    "OperacionTemplateMixin",
-    "PaginationMixin",
-    "StandaloneFormMixin",
-    "get_last_week_id",
+    "CLASS_SELECT",
+    "apply_tailwind_style",
+    "disable_field",
+    "get_mapping_model",
     "get_related_names_map",
-    "StandaloneTemplateMixin",
+    "camel_to_title",
+    "to_camel_case",
+    "OperationReadonlyViewMixin",
+    "OperationEditViewMixin",
+    "DynamicModelMixin",
+    "StandaloneViewMixin",
 ]

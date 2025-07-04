@@ -21,10 +21,8 @@ class BaseRequestModel(models.Model):
     cronograma = models.CharField(
         max_length=7,
         validators=[MinLengthValidator(7)],
+        unique=True,
         help_text="Periodo del cronograma (YYYY-MM)",
-    )
-    operaciones = models.JSONField(
-        default=list, help_text="Lista con todas las operaciones en formato JSON"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     send_at = models.DateTimeField(null=True, blank=True)

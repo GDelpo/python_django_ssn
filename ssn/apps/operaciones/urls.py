@@ -1,28 +1,28 @@
 from django.urls import path
 
 from .views import (
-    BaseRequestFormView,
-    BaseRequestListView,
-    EnviarOperacionesView,
+    SolicitudBaseCreateView,
+    SolicitudBaseListView,
+    OperacionSendView,
     OperacionCreateView,
     OperacionDeleteView,
-    OperacionEditView,
-    OperacionViewDetailView,
-    OperationTableView,
-    PrevisualizarOperacionesView,
-    SolicitudResponseDetailView,
-    TipoOperacionFormView,
+    OperacionUpdateView,
+    OperacionDetailView,
+    OperacionListView,
+    OperacionPreviewView,
+    SolicitudRespuestaDetailView,
+    TipoOperacionSelectView,
 )
 
 app_name = "operaciones"
 
 urlpatterns = [
     # Inicio de solicitud base: aquí se crea la solicitud y se genera el UUID
-    path("", BaseRequestFormView.as_view(), name="solicitud_base"),
+    path("", SolicitudBaseCreateView.as_view(), name="solicitud_base"),
     # Selección del tipo de operación (se pasa el uuid de la solicitud)
     path(
         "<uuid:uuid>/nueva/",
-        TipoOperacionFormView.as_view(),
+        TipoOperacionSelectView.as_view(),
         name="seleccion_tipo_operacion",
     ),
     # Crear nueva operación
@@ -34,7 +34,7 @@ urlpatterns = [
     # Editar operación
     path(
         "<uuid:uuid>/editar/<str:tipo_operacion>/<int:pk>/",
-        OperacionEditView.as_view(),
+        OperacionUpdateView.as_view(),
         name="editar_operacion",
     ),
     # Eliminar operación
@@ -46,29 +46,29 @@ urlpatterns = [
     # Ver detalles de operación (modo solo lectura)
     path(
         "<uuid:uuid>/ver/<str:tipo_operacion>/<int:pk>/",
-        OperacionViewDetailView.as_view(),
+        OperacionDetailView.as_view(),
         name="ver_operacion",
     ),
     # Listado de operaciones
-    path("<uuid:uuid>/all/", OperationTableView.as_view(), name="lista_operaciones"),
+    path("<uuid:uuid>/all/", OperacionListView.as_view(), name="lista_operaciones"),
     # Revisar operaciones serializadas
     path(
         "<uuid:uuid>/preview/",
-        PrevisualizarOperacionesView.as_view(),
+        OperacionPreviewView.as_view(),
         name="preview_operaciones",
     ),
     # Enviar operaciones serializadas
     path(
         "<uuid:uuid>/enviar/",
-        EnviarOperacionesView.as_view(),
+        OperacionSendView.as_view(),
         name="enviar_operaciones",
     ),
     # Listado de todas las solicitudes base
-    path("solicitudes/", BaseRequestListView.as_view(), name="lista_solicitudes"),
+    path("solicitudes/", SolicitudBaseListView.as_view(), name="lista_solicitudes"),
     # Detalle de una respuesta generada
     path(
         "solicitudes/respuesta/<int:pk>/",
-        SolicitudResponseDetailView.as_view(),
+        SolicitudRespuestaDetailView.as_view(),
         name="detalle_respuesta",
     ),
 ]

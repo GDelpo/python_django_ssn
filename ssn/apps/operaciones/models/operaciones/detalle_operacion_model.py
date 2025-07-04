@@ -2,8 +2,8 @@
 Modelos que representan el detalle de una operación.
 """
 
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.forms import ValidationError
 
 from ...helpers import comprobante_upload_path, validate_comprobante_file
 from ..choices import TipoEspecie, TipoValuacion

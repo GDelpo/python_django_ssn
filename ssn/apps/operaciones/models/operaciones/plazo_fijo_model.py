@@ -1,5 +1,5 @@
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.forms import ValidationError
 
 from ...helpers import comprobante_upload_path
 from ..choices import TipoOperacion

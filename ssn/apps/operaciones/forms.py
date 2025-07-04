@@ -53,7 +53,7 @@ class BaseRequestForm(forms.ModelForm):
 
     class Meta:
         model = BaseRequestModel
-        exclude = ["operaciones", "cronograma", "send_at"]
+        exclude = ["cronograma", "send_at"]
 
     def __init__(self, *args, **kwargs):
         """
@@ -113,6 +113,18 @@ class BaseRequestForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Debe seleccionar un cronograma según el tipo de entrega."
             )
+
+        # Validar si ya existe un cronograma con el mismo valor
+        qs = BaseRequestModel.objects.filter(cronograma=seleccionado)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            logger.warning(f"El cronograma '{seleccionado}' ya existe.")
+            # Mostrar el error pegado al campo correcto:
+            if tipo_entrega == "Mensual":
+                self.add_error("cronograma_mensual", "El cronograma ya está en uso.")
+            else:
+                self.add_error("cronograma_semanal", "El cronograma ya está en uso.")
 
         # Guardar el cronograma en los datos validados
         cleaned_data["cronograma"] = seleccionado

@@ -881,6 +881,10 @@ select {
   margin-left: auto;
 }
 
+.mr-0\.5 {
+  margin-right: 0.125rem;
+}
+
 .mr-1 {
   margin-right: 0.25rem;
 }
@@ -919,10 +923,6 @@ select {
 
 .mt-5 {
   margin-top: 1.25rem;
-}
-
-.mr-0\.5 {
-  margin-right: 0.125rem;
 }
 
 .block {

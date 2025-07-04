@@ -180,7 +180,7 @@ def serialize_operations(base_instance, operations, pre_serialized=False):
 
     Args:
         base_instance: Instancia del modelo base (BaseRequestModel)
-        operations: Lista de operaciones a serializar
+        operations: Lista de operaciones a serializar (instancias reales de modelo)
         pre_serialized (bool): Indica si las operaciones ya están serializadas
 
     Returns:
@@ -200,18 +200,20 @@ def serialize_operations(base_instance, operations, pre_serialized=False):
         serialized_ops = []
 
         for op in operations:
-            if op.get("instance") is not None:
-                try:
-                    serializer_class = create_model_serializer(op["tipo"])
-                    serialized_data = serializer_class(op["instance"]).data
-                    serialized_ops.append(serialized_data)
-                    logger.debug(
-                        f"Operación tipo {op['tipo']} serializada correctamente"
+            try:
+                tipo = getattr(op, "tipo_operacion", None)
+                if tipo is None:
+                    logger.warning(
+                        f"No se encontró tipo_operacion para instancia {op}."
                     )
-                except Exception as e:
-                    logger.error(
-                        f"Error al serializar operación tipo {op['tipo']}: {str(e)}"
-                    )
+                    continue  # O podrías intentar deducir el tipo por el modelo
+
+                serializer_class = create_model_serializer(tipo)
+                serialized_data = serializer_class(op).data
+                serialized_ops.append(serialized_data)
+                logger.debug(f"Operación tipo {tipo} serializada correctamente")
+            except Exception as e:
+                logger.error(f"Error al serializar operación: {str(e)}")
 
         base_data["operaciones"] = serialized_ops
         logger.debug(f"Total de operaciones serializadas: {len(serialized_ops)}")

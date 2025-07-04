@@ -1,388 +1,282 @@
 import logging
 
 from django.contrib import messages
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.generic import FormView, TemplateView
 
 from ..models import BaseRequestModel
 from .model_utils import get_mapping_model
 
-# Configuración del logger
 logger = logging.getLogger("operaciones")
 
 
-class BreadcrumbMixin:
+class BreadcrumbsMixin:
     """
-    Mixin que inyecta `breadcrumb_items` en el contexto de la vista.
-    Las vistas que hereden de esto deben implementar get_breadcrumbs().
+    Convierte `self.get_breadcrumbs()` en lista de tuplas (label, url).
     """
+
+    breadcrumbs = []
 
     def get_breadcrumbs(self):
-        """
-        Debe devolver una lista de tuplas (label, url).
-        Si url es None, se muestra el label sin enlace (último breadcrumb).
-        Ejemplo:
-            return [
-                ("Inicio", reverse("theme:index")),
-                ("Listado de Solicitudes", None),
-            ]
-        """
-        return []
+        return self.breadcrumbs
+
+    def resolve_breadcrumbs(self):
+        items = []
+        for entry in self.get_breadcrumbs():
+            # Aseguramos tupla de largo 2 o 3
+            if len(entry) == 2:
+                label_obj, url_name = entry
+                kwargs_obj = {}
+            elif len(entry) == 3:
+                label_obj, url_name, kwargs_obj = entry
+            else:
+                continue
+
+            # Resolvemos label
+            label = label_obj(self) if callable(label_obj) else label_obj
+
+            # Resolvemos URL si existe
+            if url_name:
+                kw = kwargs_obj(self) if callable(kwargs_obj) else kwargs_obj
+                url = reverse(url_name, kwargs=kw)
+            else:
+                url = None
+
+            items.append((label, url))
+        return items
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["breadcrumb_items"] = self.get_breadcrumbs()
-        return context
+        ctx = super().get_context_data(**kwargs)
+        ctx["breadcrumb_items"] = self.resolve_breadcrumbs()
+        return ctx
 
 
-class HeaderButtonMixin:
+class HeaderButtonsMixin:
     """
-    Mixin que proporciona métodos para generar botones de navegación en el encabezado.
-    Permite estandarizar la creación de botones "volver" y otros controles.
+    Genera `header_buttons` a partir de `get_header_buttons_config()` y un mapa de fábricas.
+    Provee también el helper `get_back_button()`.
     """
+
+    header_buttons_config = []
+
+    BUTTON_FACTORIES = {
+        "back_base": lambda self: self.get_back_button(
+            "operaciones:solicitud_base", use_uuid=False
+        ),
+        "back_selection": lambda self: self.get_back_button(
+            "operaciones:seleccion_tipo_operacion"
+        ),
+        "back_operations": lambda self: self.get_back_button(
+            "operaciones:lista_operaciones"
+        ),
+        "back_solicitudes": lambda self: self.get_back_button(
+            "operaciones:lista_solicitudes", use_uuid=False
+        ),
+        "new_base": lambda self: {
+            "href": reverse("operaciones:solicitud_base"),
+            "label": "Nueva Solicitud",
+            "icon": "fas fa-plus",
+            "color": "primary",
+        },
+        "new_operation": lambda self: {
+            "href": reverse(
+                "operaciones:seleccion_tipo_operacion",
+                kwargs={"uuid": str(self.base_request.uuid)},
+            ),
+            "label": "Nueva Operación",
+            "icon": "fas fa-plus",
+            "color": "primary",
+        },
+        "preview": lambda self: {
+            "href": reverse(
+                "operaciones:preview_operaciones",
+                kwargs={"uuid": str(self.base_request.uuid)},
+            ),
+            "label": "Revisar Solicitud",
+            "icon": "fas fa-eye",
+            "color": "warning",
+        },
+        "send": lambda self: {
+            "id": "enviarSolicitud",
+            "href": reverse(
+                "operaciones:enviar_operaciones",
+                kwargs={"uuid": str(self.base_request.uuid)},
+            ),
+            "label": "Enviar Solicitud",
+            "icon": "fas fa-paper-plane",
+            "color": "success",
+        },
+    }
+
+    def get_header_buttons_config(self):
+        cfg = self.header_buttons_config
+        return cfg() if callable(cfg) else (cfg or [])
 
     def get_back_button(self, url_name, extra_kwargs=None, use_uuid=True):
-        """
-        Genera un botón 'Volver atrás' centralizado para toda la aplicación.
-
-        Args:
-            url_name: Nombre de la URL a la que redirigir
-            extra_kwargs: Parámetros adicionales para la URL
-            use_uuid: Indica si se debe incluir el UUID de la solicitud base
-
-        Returns:
-            dict: Definición del botón para la plantilla
-        """
         if extra_kwargs is None:
             extra_kwargs = {}
-
-        if use_uuid and hasattr(self, "base_request") and self.base_request:
-            uuid_str = str(self.base_request.uuid)
-            logger.debug(f"Generando botón 'volver' a {url_name} con UUID {uuid_str}")
-            kwargs = {"uuid": uuid_str, **extra_kwargs}
-        else:
-            logger.debug(f"Generando botón 'volver' a {url_name} sin UUID")
-            kwargs = extra_kwargs
-
+        if use_uuid and hasattr(self, "base_request"):
+            extra_kwargs["uuid"] = str(self.base_request.uuid)
         return {
-            "href": reverse(url_name, kwargs=kwargs),
+            "href": reverse(url_name, kwargs=extra_kwargs),
             "label": "Volver atrás",
             "icon": "fas fa-chevron-left",
             "color": "secondary",
         }
 
+    def get_header_buttons(self):
+        cfg = self.get_header_buttons_config()
+        buttons = []
+        for key in cfg:
+            factory = self.BUTTON_FACTORIES.get(key)
+            if not factory:
+                continue
+            btn = factory(self)
+            cond = btn.get("condition")
+            if cond is None or cond(self):
+                buttons.append(btn)
+        return buttons
 
-class BaseRequestMixin:
+
+class BaseRequestRequiredMixin:
     """
-    Mixin para recuperar y validar la solicitud base a partir del UUID en la URL.
-    Gestiona la coherencia entre la sesión y la URL, redirigiendo en caso de discrepancia.
+    Recupera y valida BaseRequestModel a partir de `uuid` en la URL y la sesión.
     """
 
     from ..services import SessionService
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Intercepta la petición para verificar y establecer la solicitud base.
-
-        Args:
-            request: Objeto HttpRequest
-
-        Returns:
-            HttpResponse: Respuesta de la vista o redirección en caso de error
-        """
         url_uuid = kwargs.get("uuid")
         session_uuid = request.session.get("base_request_uuid")
 
-        # Validación: si no hay UUID en la URL, redirige al inicio
         if not url_uuid:
-            logger.warning("Intento de acceso a vista protegida sin UUID en la URL")
             messages.error(request, "No se encontró una solicitud activa.")
             return redirect("operaciones:solicitud_base")
 
-        # Validar coherencia entre sesión y URL
         if session_uuid and str(session_uuid) != str(url_uuid):
-            logger.warning(
-                f"Discrepancia entre UUID de sesión ({session_uuid}) y URL ({url_uuid})"
-            )
             messages.warning(
                 request,
-                "La solicitud actual no coincide con la sesión. Se ha reiniciado el proceso.",
+                "La solicitud no coincide con la sesión; se reinició el proceso.",
             )
             self.SessionService.clear_base_request(request)
-            self.SessionService.clear_operations(request)
             return redirect("operaciones:solicitud_base")
 
-        # Si no había UUID en sesión, lo establecemos
         if not session_uuid:
-            logger.debug(f"Estableciendo UUID de sesión: {url_uuid}")
             request.session["base_request_uuid"] = str(url_uuid)
             request.session.modified = True
 
-        # Validación segura del objeto base
         try:
             self.base_request = BaseRequestModel.objects.get(uuid=url_uuid)
-            logger.debug(f"Solicitud base recuperada: {url_uuid}")
         except BaseRequestModel.DoesNotExist:
-            logger.error(f"UUID solicitado no existe en la base de datos: {url_uuid}")
             messages.error(request, "La solicitud seleccionada no existe.")
             self.SessionService.clear_base_request(request)
-            self.SessionService.clear_operations(request)
             return redirect("operaciones:solicitud_base")
 
         return super().dispatch(request, *args, **kwargs)
 
 
-class CommonContextMixin:
+class ContextMixin:
     """
-    Mixin que agrega información común al contexto de la plantilla:
-    título, botón, base_request y opciones de encabezado.
+    Agrega al contexto los valores: title, button_text, header_buttons y extra_info.
     """
 
-    titulo = ""
-    boton_texto = ""
-    header_buttons = []
+    title = ""
+    button_text = ""
+
+    def get_title(self):
+        return self.title
+
+    def get_button_text(self):
+        return self.button_text
 
     def get_header_buttons(self):
-        """
-        Devuelve la lista de botones para el encabezado.
-        Se puede sobreescribir en las vistas derivadas.
+        # Por defecto, sin botones. Se sobrescribe con HeaderButtonsMixin.
+        return []
 
-        Returns:
-            list: Lista de definiciones de botones
-        """
-        return self.header_buttons
+    def get_extra_info(self):
+        from ..services import OperacionesService
 
-    def get_common_context(self, context):
-        """
-        Agrega al contexto existente los elementos comunes a todas las vistas.
-
-        Args:
-            context: Contexto base
-
-        Returns:
-            dict: Contexto enriquecido
-        """
-        from ..services import SessionService
-
-        extra_info = ""
         if hasattr(self, "base_request"):
-            logger.debug(
-                f"Obteniendo información extra para solicitud {self.base_request.uuid}"
-            )
-            extra_info = SessionService.get_extra_info(self.request)
-            context["base_request"] = self.base_request
-
-        context.update(
-            {
-                "title": self.titulo,
-                "boton_texto": self.boton_texto,
-                "header_buttons": self.get_header_buttons(),
-                "extra_info": extra_info,
-            }
-        )
-        return context
+            return OperacionesService.get_extra_info(self.base_request)
+        return ""
 
     def get_context_data(self, **kwargs):
-        """
-        Implementación estándar para obtener el contexto enriquecido.
-
-        Returns:
-            dict: Contexto completo para la plantilla
-        """
         context = super().get_context_data(**kwargs)
-        return self.get_common_context(context)
+        context.update(
+            {
+                "title": self.get_title(),
+                "button_text": self.get_button_text(),
+                "header_buttons": self.get_header_buttons(),
+                "extra_info": self.get_extra_info(),
+            }
+        )
+        if hasattr(self, "base_request"):
+            context["base_request"] = self.base_request
+        return context
 
 
-class PaginationMixin:
+class DynamicModelMixin:
     """
-    Mixin para facilitar la paginación de queryset y objetos.
-    Gestiona las excepciones comunes de la paginación.
-    """
-
-    paginate_by = 10
-
-    def paginate_queryset(self, queryset):
-        """
-        Pagina un queryset y maneja excepciones de paginación.
-
-        Args:
-            queryset: QuerySet o lista a paginar
-
-        Returns:
-            tuple: (página actual, objeto paginador)
-        """
-        if not queryset:
-            logger.debug("Intento de paginar un queryset vacío")
-            return [], Paginator([], self.paginate_by)
-
-        paginator = Paginator(queryset, self.paginate_by)
-        page = self.request.GET.get("page")
-
-        try:
-            logger.debug(
-                f"Paginando queryset de {paginator.count} elementos, página {page}"
-            )
-            return paginator.page(page), paginator
-        except PageNotAnInteger:
-            logger.debug(f"Número de página no válido: '{page}', usando página 1")
-            return paginator.page(1), paginator
-        except EmptyPage:
-            logger.debug(f"Página {page} fuera de rango, usando página 1")
-            return paginator.page(1), paginator
-
-
-class OperacionModelViewMixin:
-    """
-    Recupera el modelo dinámico usando 'tipo_operacion' de la URL.
-    Permite que las vistas trabajen con diferentes modelos según el tipo.
+    Selecciona dinámicamente el modelo según `tipo_operacion` en la URL.
     """
 
     def get_model_class(self):
-        """
-        Obtiene la clase de modelo correspondiente al tipo de operación.
-
-        Returns:
-            Model: Clase de modelo para el tipo de operación
-
-        Raises:
-            Http404: Si el tipo de operación no existe
-        """
-        tipo_operacion = self.kwargs.get("tipo_operacion")
-        mapping = get_mapping_model()
-
-        logger.debug(f"Buscando modelo para tipo de operación: {tipo_operacion}")
-        model_class = mapping.get(tipo_operacion)
-
-        if not model_class:
-            logger.error(f"Tipo de operación inválido: {tipo_operacion}")
+        tipo = self.kwargs.get("tipo_operacion")
+        model = get_mapping_model().get(tipo)
+        if not model:
             messages.error(self.request, "Tipo de operación inválido.")
-            raise Http404("Tipo de operación inválido.")
-
-        return model_class
+            raise Http404()
+        return model
 
     def get_queryset(self):
-        """
-        Devuelve el queryset para el modelo dinámico.
-
-        Returns:
-            QuerySet: Todos los objetos del modelo para el tipo de operación
-        """
         return self.get_model_class().objects.all()
 
     def get_object(self, queryset=None):
-        """
-        Obtiene el objeto específico según el ID de la URL.
-
-        Args:
-            queryset: QuerySet opcional
-
-        Returns:
-            object: Instancia del modelo
-
-        Raises:
-            Http404: Si el objeto no existe
-        """
-        queryset = queryset or self.get_queryset()
-        pk = self.kwargs.get("pk")
-
-        logger.debug(
-            f"Recuperando obejto con ID {pk} del tipo {self.kwargs.get('tipo_operacion')}"
+        return get_object_or_404(
+            queryset or self.get_queryset(), pk=self.kwargs.get("pk")
         )
-        try:
-            return get_object_or_404(queryset, pk=pk)
-        except Http404:
-            logger.warning(
-                f"Objeto con ID {pk} no encontrado para tipo {self.kwargs.get('tipo_operacion')}"
+
+
+class DisallowAfterSentMixin:
+    """
+    Bloquea cualquier dispatch si la solicitud ya fue enviada.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        if getattr(self, "base_request", None) and self.base_request.send_at:
+            messages.error(request, "No se puede modificar una solicitud ya enviada.")
+            return redirect(
+                "operaciones:lista_operaciones", uuid=str(self.base_request.uuid)
             )
-            raise
+        return super().dispatch(request, *args, **kwargs)
 
 
-# ============
-# Vistas base
-# ============
-
-
-class StandaloneFormMixin(HeaderButtonMixin, CommonContextMixin):
+class StandaloneViewMixin(
+    BreadcrumbsMixin,
+    HeaderButtonsMixin,
+    ContextMixin,
+):
     """
-    Mixin base para formularios independientes que no requieren UUID en la URL.
-    Ideal para BaseRequestFormView y formularios iniciales.
-    """
-
-    def get_context_data(self, **kwargs):
-        """
-        Implementación específica para formularios independientes.
-
-        Returns:
-            dict: Contexto completo para la plantilla
-        """
-        context = super().get_context_data(**kwargs)
-        return self.get_common_context(context)
-
-
-class OperacionBaseContextView(BaseRequestMixin, HeaderButtonMixin, CommonContextMixin):
-    """
-    Clase base para vistas que usan base_request y encabezados.
-    Combina la funcionalidad de varios mixins para facilitar el desarrollo.
-    """
-
-    def get_context_data(self, **kwargs):
-        """
-        Implementación específica para vistas de operaciones.
-
-        Returns:
-            dict: Contexto completo para la plantilla
-        """
-        context = super().get_context_data(**kwargs)
-        return self.get_common_context(context)
-
-
-class OperacionFormMixin(OperacionBaseContextView, FormView):
-    """
-    Vista base para formularios de operaciones.
-    Proporciona la estructura común para formularios relacionados con operaciones.
-    """
-
-    def form_invalid(self, form):
-        """
-        Manejo personalizado para formularios inválidos.
-
-        Args:
-            form: Formulario con errores
-
-        Returns:
-            HttpResponse: Respuesta con formulario inválido
-        """
-        if hasattr(self, "tipo_operacion"):
-            logger.warning(
-                f"Formulario inválido para operación tipo: {self.tipo_operacion}"
-            )
-        else:
-            logger.warning("Formulario inválido")
-
-        for field, errors in form.errors.items():
-            for error in errors:
-                logger.debug(f"Error en campo '{field}': {error}")
-
-        return super().form_invalid(form)
-
-
-class OperacionTemplateMixin(OperacionBaseContextView, TemplateView):
-    """
-    Vista base para templates de operaciones.
-    Proporciona la estructura común para vistas informativas o de solo lectura.
+    Vistas que NO usan base_request en la URL:
+      - SolicitudBaseCreateView (path '')
+      - SolicitudBaseListView (path 'solicitudes/')
+      - SolicitudRespuestaDetailView (path 'solicitudes/respuesta/...')
     """
 
     pass
 
 
-class StandaloneTemplateMixin(HeaderButtonMixin, CommonContextMixin, TemplateView):
-    """
-    Vista base para templates independientes que no requieren UUID en la URL.
-    Combina la funcionalidad de HeaderButtonMixin y CommonContextMixin con TemplateView.
-    Útil para vistas informativas o de listado general.
-    """
+class OperationReadonlyViewMixin(StandaloneViewMixin, BaseRequestRequiredMixin):
+    """Mixin base para TODAS las vistas de solo lectura/listados/previews/envíos."""
+
+    pass
+
+
+class OperationEditViewMixin(
+    OperationReadonlyViewMixin,
+    DisallowAfterSentMixin,
+):
+    """Mixin para vistas de creación, edición y eliminación (bloquea tras envío)."""
 
     pass
