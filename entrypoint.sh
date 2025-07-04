@@ -53,11 +53,9 @@ echo "ℹ️ Aplicando migraciones..."
 python ssn/manage.py migrate --noinput
 echo "✅ Migraciones aplicadas"
 
-# Crear carpetas de media necesarias (robustez para desarrollo y producción)
-echo "ℹ️ Asegurando carpetas de media..."
-mkdir -p /app/ssn/media/previews
+# Preparar carpetas de media
+echo "ℹ️ Asegurando permisos en las carpetas de media..."
 chmod 775 /app/ssn/media/previews
-mkdir -p /app/ssn/media/comprobantes
 chmod 775 /app/ssn/media/comprobantes
 
 # Crear superusuario si no existe y las variables están definidas
