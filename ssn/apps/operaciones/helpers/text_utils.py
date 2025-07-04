@@ -1,3 +1,4 @@
+import json
 import re
 
 
@@ -24,3 +25,15 @@ def to_camel_case(snake_str):
     """
     components = snake_str.split("_")
     return components[0] + "".join(x.title() for x in components[1:])
+
+
+def pretty_json(data):
+    """
+    Converts a Python object into a formatted JSON string with indentation for readability.
+    Args:
+        data (Any): The Python object to be serialized into JSON.
+    Returns:
+        str: A JSON-formatted string representation of the input data, indented for readability and preserving non-ASCII characters.
+    """
+
+    return json.dumps(data, indent=4, ensure_ascii=False)

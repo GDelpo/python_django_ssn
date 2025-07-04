@@ -1,16 +1,16 @@
 from django.urls import path
 
 from .views import (
-    SolicitudBaseCreateView,
-    SolicitudBaseListView,
-    OperacionSendView,
     OperacionCreateView,
     OperacionDeleteView,
-    OperacionUpdateView,
     OperacionDetailView,
     OperacionListView,
     OperacionPreviewView,
-    SolicitudRespuestaDetailView,
+    OperacionSendView,
+    OperacionUpdateView,
+    SolicitudBaseCreateView,
+    SolicitudBaseListView,
+    SolicitudRespuestasListView,
     TipoOperacionSelectView,
 )
 
@@ -63,12 +63,13 @@ urlpatterns = [
         OperacionSendView.as_view(),
         name="enviar_operaciones",
     ),
-    # Listado de todas las solicitudes base
-    path("solicitudes/", SolicitudBaseListView.as_view(), name="lista_solicitudes"),
     # Detalle de una respuesta generada
     path(
-        "solicitudes/respuesta/<int:pk>/",
-        SolicitudRespuestaDetailView.as_view(),
+        "<uuid:uuid>/respuesta/",
+        SolicitudRespuestasListView.as_view(),
         name="detalle_respuesta",
     ),
+    # Listado de todas las solicitudes base
+    path("solicitudes/", SolicitudBaseListView.as_view(), name="lista_solicitudes"),
+    
 ]

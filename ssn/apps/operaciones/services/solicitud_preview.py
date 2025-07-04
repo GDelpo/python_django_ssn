@@ -1,4 +1,3 @@
-import json
 from io import BytesIO
 from urllib.parse import quote
 
@@ -7,6 +6,7 @@ import pandas as pd
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
+from ..helpers import pretty_json
 from ..serializers import serialize_operations
 
 
@@ -33,7 +33,7 @@ class SolicitudPreviewService:
                     operacion["cantEspecies"] = int(float(operacion["cantEspecies"]))
 
         # Formateo JSON y mailto link
-        self.formatted_json = json.dumps(self.payload, indent=4, ensure_ascii=False)
+        self.formatted_json = pretty_json(self.payload)
         tipo_entrega = self.payload.get("tipoEntrega", "Desconocido")
         mail_subject = f"modelo de operacion - {tipo_entrega}"
         mail_body = f"ID: {self.base_request.uuid}\nSolicitud:\n{self.formatted_json}"

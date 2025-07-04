@@ -15,21 +15,18 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
+from ssn_client.services import enviar_y_guardar_solicitud
 
 from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
 from .helpers import (
-    OperationReadonlyViewMixin,
-    OperationEditViewMixin,
     DynamicModelMixin,
+    OperationEditViewMixin,
+    OperationReadonlyViewMixin,
     StandaloneViewMixin,
+    pretty_json,
 )
-from .models import BaseRequestModel, SolicitudResponse
-from .services import (
-    OperacionesService,
-    SessionService,
-    SolicitudPreviewService,
-    SolicitudSenderService,
-)
+from .models import BaseRequestModel
+from .services import OperacionesService, SessionService, SolicitudPreviewService
 
 logger = logging.getLogger("operaciones")
 
@@ -441,8 +438,9 @@ class OperacionSendView(
             return redirect(
                 "operaciones:lista_operaciones", uuid=str(self.base_request.uuid)
             )
-        sender = SolicitudSenderService(self.base_request, operations)
-        response_data, status = sender.enviar(allow_empty=allow_empty)
+        response_data, status, response_obj = enviar_y_guardar_solicitud(
+            self.base_request, operations, allow_empty=allow_empty
+        )
         if 200 <= status < 300:
             messages.success(
                 request,
@@ -460,20 +458,20 @@ class OperacionSendView(
         )
 
 
-class SolicitudRespuestaDetailView(
+class SolicitudRespuestasListView(
     StandaloneViewMixin,
     DetailView,
 ):
     # --- Atributos configurables ---
-    model = SolicitudResponse
-    template_name = "lists/respuesta_detalle.html"
-    context_object_name = "response_obj"
-    title = "Detalle de Respuesta"
+    model = BaseRequestModel
+    template_name = "lists/respuestas_por_solicitud.html"
+    context_object_name = "solicitud"
+    title = "Detalle de Respuestas"
     header_buttons_config = ["back_solicitudes"]
     breadcrumbs = [
         ("Inicio", "theme:index"),
         ("Listado de Solicitudes", "operaciones:lista_solicitudes"),
-        ("Detalle de Respuesta", None),
+        ("Detalle de Respuestas", None),
     ]
 
     # --- Métodos ---
@@ -488,12 +486,12 @@ class SolicitudRespuestaDetailView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        import json
-
-        context["formatted_payload"] = json.dumps(
-            self.object.payload_enviado, indent=4, ensure_ascii=False
-        )
-        context["formatted_response"] = json.dumps(
-            self.object.respuesta, indent=4, ensure_ascii=False
-        )
+        context["respuestas"] = [
+            {
+                "obj": resp,
+                "formatted_payload": pretty_json(resp.payload_enviado),
+                "formatted_response": pretty_json(resp.respuesta),
+            }
+            for resp in self.object.respuestas.all().order_by("created_at")
+        ]
         return context

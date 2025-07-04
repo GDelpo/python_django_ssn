@@ -11,7 +11,6 @@ from .operaciones import (
     PlazoFijoOperacion,
     VentaOperacion,
 )
-from .response_model import SolicitudResponse
 
 __all__ = [
     "BaseRequestModel",
@@ -24,5 +23,4 @@ __all__ = [
     "TipoValuacion",
     "TipoEntrega",
     "DetalleOperacionCanje",
-    "SolicitudResponse",
 ]
