@@ -27,7 +27,8 @@
           </div>
             <!-- Navegación para pantallas medianas y grandes con indicador de página activa -->
           <nav class="hidden sm:flex space-x-4" id="desktop-menu">
-            <a href="{% url 'theme:index' %}" class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md {% if request.resolver_match.url_name == 'home' %}bg-blue-100 text-blue-600{% else %}text-gray-600 hover:bg-gray-100 hover:text-blue-600{% endif %}">
+            <a href="{% url 'theme:index' %}" class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md {% if request.resolver_match and request.resolver_match.url_name == 'home' %}
+bg-blue-100 text-blue-600{% else %}text-gray-600 hover:bg-gray-100 hover:text-blue-600{% endif %}">
               <i class="fas fa-home mr-1.5"></i>
               <span class="hidden sm:inline">Inicio</span>
             </a>
@@ -40,7 +41,8 @@
 <!-- Menú desplegable para móviles con indicador de página activa -->
           <nav class="sm:hidden hidden" id="mobile-menu">
             <div class="px-2 pt-2 pb-3 space-y-1">
-              <a href="{% url 'theme:index' %}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.resolver_match.url_name == 'home' %}bg-blue-100 text-blue-600{% else %}text-gray-600 hover:bg-gray-100 hover:text-blue-600{% endif %}">
+              <a href="{% url 'theme:index' %}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.resolver_match and request.resolver_match.url_name == 'home' %}
+bg-blue-100 text-blue-600{% else %}text-gray-600 hover:bg-gray-100 hover:text-blue-600{% endif %}">
                 <i class="fas fa-home mr-1.5"></i> Inicio
               </a>
               <a href="{% url 'operaciones:lista_solicitudes' %}" class="block px-3 py-2 rounded-md text-base font-medium {% if request.resolver_match.url_name == 'lista_solicitudes' %}bg-blue-100 text-blue-600{% else %}text-gray-600 hover:bg-gray-100 hover:text-blue-600{% endif %}">
