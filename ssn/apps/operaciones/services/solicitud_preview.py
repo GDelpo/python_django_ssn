@@ -6,7 +6,8 @@ import pandas as pd
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
-from ..helpers import pretty_json
+from ..helpers.text_utils import pretty_json
+
 from ..serializers import serialize_operations
 
 

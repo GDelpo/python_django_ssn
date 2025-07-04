@@ -13,7 +13,7 @@ from .mixins import (
     StandaloneViewMixin,
 )
 from .model_utils import get_mapping_model, get_related_names_map
-from .text_utils import camel_to_title, pretty_json, to_camel_case
+from .text_utils import camel_to_title, to_camel_case
 
 __all_ = [
     "generate_monthly_options",
@@ -33,5 +33,4 @@ __all_ = [
     "OperationEditViewMixin",
     "DynamicModelMixin",
     "StandaloneViewMixin",
-    "pretty_json",
 ]

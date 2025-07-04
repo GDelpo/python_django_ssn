@@ -15,15 +15,16 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
-from ssn_client.services import enviar_y_guardar_solicitud
 
+from ssn_client.services import enviar_y_guardar_solicitud
 from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
+
+from .helpers.text_utils import pretty_json
 from .helpers import (
     DynamicModelMixin,
     OperationEditViewMixin,
     OperationReadonlyViewMixin,
     StandaloneViewMixin,
-    pretty_json,
 )
 from .models import BaseRequestModel
 from .services import OperacionesService, SessionService, SolicitudPreviewService
@@ -438,7 +439,7 @@ class OperacionSendView(
             return redirect(
                 "operaciones:lista_operaciones", uuid=str(self.base_request.uuid)
             )
-        response_data, status, response_obj = enviar_y_guardar_solicitud(
+        response_data, status, _ = enviar_y_guardar_solicitud(
             self.base_request, operations, allow_empty=allow_empty
         )
         if 200 <= status < 300:
@@ -447,15 +448,15 @@ class OperacionSendView(
                 response_data.get("message", "Solicitud enviada correctamente."),
             )
             SessionService.clear_base_request(request)
-            return redirect(settings.HOME_URL or reverse("operaciones:solicitud_base"))
+            # Ir al historial de respuestas de la solicitud:
+            return redirect("operaciones:solicitud_respuestas", pk=self.base_request.uuid)
         messages.error(
             request, response_data.get("message", "Error al enviar la solicitud.")
         )
         for err in response_data.get("errors", []):
             messages.error(request, err)
-        return redirect(
-            "operaciones:lista_operaciones", uuid=str(self.base_request.uuid)
-        )
+        # Mostrar historial de respuestas igual, para debugging:
+        return redirect("operaciones:solicitud_respuestas", pk=self.base_request.uuid)
 
 
 class SolicitudRespuestasListView(
