@@ -2,6 +2,7 @@ import json
 from io import BytesIO
 from urllib.parse import quote
 
+import numpy as np
 import pandas as pd
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -57,6 +58,9 @@ class SolicitudPreviewService:
         # Operaciones
         operaciones_df = pd.json_normalize(operaciones_json or [])
         operaciones_df.columns = [camel_to_title(col) for col in operaciones_df.columns]
+
+        base_df = base_df.replace([np.nan, np.inf, -np.inf], "")
+        operaciones_df = operaciones_df.replace([np.nan, np.inf, -np.inf], "")
 
         output = BytesIO()
         with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
