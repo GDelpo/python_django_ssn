@@ -15,14 +15,14 @@
           </p>
           <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
             <a
-              href="{% url 'home' %}"
+              href="{% url 'theme:index' %}"
               class="px-8 py-3 rounded-md text-white bg-blue-900 hover:bg-blue-800 text-base font-medium shadow-md transition duration-300 flex items-center justify-center"
             >
               <i class="fas fa-home mr-2"></i>
               Volver al Inicio
             </a>
             <a
-              href="mailto:{{ support_email }}"
+              href="mailto:{{ support_email|default:'soporte@nobleseguros.com' }}"
               class="px-8 py-3 rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 text-base font-medium shadow-md transition duration-300 flex items-center justify-center"
             >
               <i class="fas fa-headset mr-2"></i>
@@ -40,7 +40,6 @@
 {% endblock %}
 
 {% block extra_js %}
-  <!-- Opcional: animación como en el home -->
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       const hero = document.querySelector("h1");
