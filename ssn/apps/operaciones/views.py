@@ -466,7 +466,7 @@ class SolicitudRespuestasListView(
     # --- Atributos configurables ---
     model = BaseRequestModel
     pk_url_kwarg = "uuid" # Cambiado de pk a uuid
-    template_name = "lists/respuestas_por_solicitud.html"
+    template_name = "lists/lista_respuestas_por_solicitud.html"
     context_object_name = "solicitud"
     title = "Detalle de Respuestas"
     header_buttons_config = ["back_solicitudes"]
