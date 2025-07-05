@@ -71,5 +71,4 @@ urlpatterns = [
     ),
     # Listado de todas las solicitudes base
     path("solicitudes/", SolicitudBaseListView.as_view(), name="lista_solicitudes"),
-    
 ]

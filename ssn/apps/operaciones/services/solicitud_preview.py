@@ -7,7 +7,6 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
 from ..helpers.text_utils import pretty_json
-
 from ..serializers import serialize_operations
 
 

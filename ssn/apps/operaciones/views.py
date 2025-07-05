@@ -15,18 +15,17 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
-
-from ..operaciones.helpers.form_styles import disable_field
 from ssn_client.services import enviar_y_guardar_solicitud
-from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
 
-from .helpers.text_utils import pretty_json
+from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
 from .helpers import (
     DynamicModelMixin,
     OperationEditViewMixin,
     OperationReadonlyViewMixin,
     StandaloneViewMixin,
 )
+from .helpers.form_styles import disable_field
+from .helpers.text_utils import pretty_json
 from .models import BaseRequestModel
 from .services import OperacionesService, SessionService, SolicitudPreviewService
 
@@ -284,10 +283,10 @@ class OperacionDetailView(
 
     def get_breadcrumbs(self):
         return self.breadcrumbs
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-       
+
         tipo_operacion = self.object.tipo_operacion
         # Crea el formulario dinámicamente según el tipo de operación
         FormClass = create_operacion_form(tipo_operacion)
@@ -303,7 +302,6 @@ class OperacionDetailView(
                     disable_field(field)
         context["form"] = form
         return context
-    
 
 
 class OperacionUpdateView(
@@ -470,14 +468,18 @@ class OperacionSendView(
             )
             SessionService.clear_base_request(request)
             # Ir al historial de respuestas de la solicitud:
-            return redirect("operaciones:solicitud_respuesta", uuid=str(self.base_request.uuid))
+            return redirect(
+                "operaciones:solicitud_respuesta", uuid=str(self.base_request.uuid)
+            )
         messages.error(
             request, response_data.get("message", "Error al enviar la solicitud.")
         )
         for err in response_data.get("errors", []):
             messages.error(request, err)
         # Mostrar historial de respuestas igual, para debugging:
-        return redirect("operaciones:solicitud_respuesta", uuid=str(self.base_request.uuid))
+        return redirect(
+            "operaciones:solicitud_respuesta", uuid=str(self.base_request.uuid)
+        )
 
 
 class SolicitudRespuestasListView(
@@ -486,7 +488,7 @@ class SolicitudRespuestasListView(
 ):
     # --- Atributos configurables ---
     model = BaseRequestModel
-    pk_url_kwarg = "uuid" # Cambiado de pk a uuid
+    pk_url_kwarg = "uuid"  # Cambiado de pk a uuid
     template_name = "lists/lista_respuestas_por_solicitud.html"
     context_object_name = "solicitud"
     title = "Detalle de Respuestas"
