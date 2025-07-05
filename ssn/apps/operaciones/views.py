@@ -476,6 +476,14 @@ class SolicitudRespuestasListView(
         ("Detalle de Respuestas", None),
     ]
 
+    def get(self, request, *args, **kwargs):
+        logger.info(f"[DEBUG] kwargs en get: {kwargs}")
+        return super().get(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        logger.info(f"[DEBUG] get_object kwargs: {self.kwargs}")
+        return super().get_object(queryset)
+
     # --- Métodos ---
     def get_title(self):
         return self.title
