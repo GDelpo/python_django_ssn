@@ -283,6 +283,26 @@ class OperacionDetailView(
 
     def get_breadcrumbs(self):
         return self.breadcrumbs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+       
+        tipo_operacion = self.object.tipo_operacion
+        # Crea el formulario dinámicamente según el tipo de operación
+        FormClass = create_operacion_form(tipo_operacion)
+        form = FormClass(instance=self.object)
+        # Deshabilitar campos del formulario principal
+        for field in form.fields.values():
+            field.disabled = True
+        # Deshabilitar campos de subformularios si existen
+        for subform_name in ["detalle_a_form", "detalle_b_form"]:
+            subform = getattr(form, subform_name, None)
+            if subform:
+                for field in subform.fields.values():
+                    field.disabled = True
+        context["form"] = form
+        return context
+    
 
 
 class OperacionUpdateView(
