@@ -115,7 +115,7 @@ def generate_placeholders(form):
                 field.widget.attrs["placeholder"] = f"Ingrese {field.label.lower()}"
 
 
-def disable_field(field, initial_value):
+def disable_field(field, initial_value=None):
     """
     Deshabilita un campo asignándole un valor inicial y añadiéndole clases
     para indicar visualmente que está deshabilitado.
@@ -124,7 +124,8 @@ def disable_field(field, initial_value):
         field (forms.Field): Campo de formulario a deshabilitar.
         initial_value: Valor inicial que se asignará al campo.
     """
-    field.initial = initial_value
+    if initial_value:
+        field.initial = initial_value
     field.disabled = True
     existing_classes = field.widget.attrs.get("class", "")
     disabled_classes = "bg-gray-200 text-gray-600 cursor-not-allowed"

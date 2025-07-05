@@ -16,6 +16,7 @@ from django.views.generic import (
     UpdateView,
 )
 
+from ..operaciones.helpers.form_styles import disable_field
 from ssn_client.services import enviar_y_guardar_solicitud
 from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
 
@@ -293,13 +294,13 @@ class OperacionDetailView(
         form = FormClass(instance=self.object)
         # Deshabilitar campos del formulario principal
         for field in form.fields.values():
-            field.disabled = True
+            disable_field(field)
         # Deshabilitar campos de subformularios si existen
         for subform_name in ["detalle_a_form", "detalle_b_form"]:
             subform = getattr(form, subform_name, None)
             if subform:
                 for field in subform.fields.values():
-                    field.disabled = True
+                    disable_field(field)
         context["form"] = form
         return context
     
