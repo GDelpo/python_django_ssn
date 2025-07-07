@@ -31,7 +31,6 @@ from .helpers.text_utils import pretty_json
 from .models import BaseRequestModel
 from .services import OperacionesService, SessionService, SolicitudPreviewService
 
-logger = logging.getLogger("operaciones")
 
 
 class SolicitudBaseCreateView(
@@ -68,23 +67,19 @@ class SolicitudBaseCreateView(
     def get(self, request, *args, **kwargs):
         recover_uuid = request.GET.get("recover_uuid")
         if recover_uuid:
-            logger.info(f"Intentando recuperar solicitud con UUID: {recover_uuid}")
             try:
                 base_instance = BaseRequestModel.objects.get(uuid=recover_uuid)
                 SessionService.set_base_request(request, base_instance)
-                logger.info(f"Solicitud {recover_uuid} recuperada.")
                 messages.success(request, "Solicitud recuperada exitosamente.")
                 return redirect(
                     "operaciones:seleccion_tipo_operacion", uuid=base_instance.uuid
                 )
             except BaseRequestModel.DoesNotExist:
-                logger.warning(
                     f"Intento de recuperar UUID no existente: {recover_uuid}"
                 )
                 messages.error(
                     request, "No se encontró una operación con el UUID proporcionado."
                 )
-        logger.debug("Mostrando formulario de solicitud base")
         return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -512,14 +507,6 @@ class SolicitudRespuestasListView(
         ("Listado de Solicitudes", "operaciones:lista_solicitudes"),
         ("Detalle de Respuestas", None),
     ]
-
-    def get(self, request, *args, **kwargs):
-        logger.info(f"[DEBUG] kwargs en get: {kwargs}")
-        return super().get(request, *args, **kwargs)
-
-    def get_object(self, queryset=None):
-        logger.info(f"[DEBUG] get_object kwargs: {self.kwargs}")
-        return super().get_object(queryset)
 
     # --- Métodos ---
     def get_title(self):

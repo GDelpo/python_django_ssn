@@ -71,7 +71,7 @@ class SsnService(metaclass=Singleton):
             response = self.session.post(token_url, json=data, headers=headers)
             if response.status_code == HTTPStatus.OK:
                 token = response.json().get("token")
-                logger.info("Token obtenido exitosamente.")
+                logger.debug("Token obtenido exitosamente.")
                 return token
             logger.error(
                 f"Error obteniendo token: {response.status_code} - {response.text}"
@@ -149,11 +149,11 @@ class SsnService(metaclass=Singleton):
             bool: True si el token es válido, False en caso contrario
         """
         if not self.token:
-            logger.info("No hay token. Obteniendo uno nuevo...")
+            logger.debug("No hay token. Obteniendo uno nuevo...")
             return self._refresh_token()
 
         if self._should_refresh_token():
-            logger.info("El token está por expirar. Refrescando...")
+            logger.debug("El token está por expirar. Refrescando...")
             return self._refresh_token()
 
         logger.debug("Token válido.")
