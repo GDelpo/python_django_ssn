@@ -3,7 +3,7 @@ Módulo principal de modelos que expone los modelos base y de operación.
 """
 
 from .base_model import BaseRequestModel
-from .choices import TipoEntrega, TipoEspecie, TipoOperacion, TipoValuacion
+from .choices import TipoEntrega, TipoEspecie, TipoOperacion, TipoTasa, TipoValuacion
 from .operaciones import (
     CanjeOperacion,
     CompraOperacion,
@@ -23,4 +23,5 @@ __all__ = [
     "TipoValuacion",
     "TipoEntrega",
     "DetalleOperacionCanje",
+    "TipoTasa",
 ]

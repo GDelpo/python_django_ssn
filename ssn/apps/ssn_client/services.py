@@ -43,7 +43,7 @@ def enviar_y_guardar_solicitud(base_request, operations, allow_empty=False):
 
         # 2) Serializar (operaciones será [] si está vacío)
         payload = serialize_operations(base_request, operations)
-        logger.info(
+        logger.debug(
             f"Payload serializado para solicitud {base_request.uuid}: {payload}"
         )
         tipo_entrega = payload.get("tipoEntrega")

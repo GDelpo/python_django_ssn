@@ -5,6 +5,7 @@ import magic
 from django.conf import settings
 from django.forms import ValidationError
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 
 
 def validate_file_extension(value):

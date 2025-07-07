@@ -25,3 +25,8 @@ class TipoEspecie(models.TextChoices):
     FIDEICOMISOS_FINANCIEROS = "FF", "Fideicomisos Financieros"
     ACCIONES = "AC", "Acciones"
     OTRAS_INVERSIONES = "OP", "Otras Inversiones"
+
+
+class TipoTasa(models.TextChoices):
+    FIJA = "F", "Fija"
+    VARIABLE = "V", "Variable"

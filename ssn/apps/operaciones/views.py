@@ -1,6 +1,5 @@
 import logging
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Exists, OuterRef
@@ -68,11 +67,11 @@ class SolicitudBaseCreateView(
     def get(self, request, *args, **kwargs):
         recover_uuid = request.GET.get("recover_uuid")
         if recover_uuid:
-            logger.info(f"Intentando recuperar solicitud con UUID: {recover_uuid}")
+            logger.debug(f"Intentando recuperar solicitud con UUID: {recover_uuid}")
             try:
                 base_instance = BaseRequestModel.objects.get(uuid=recover_uuid)
                 SessionService.set_base_request(request, base_instance)
-                logger.info(f"Solicitud {recover_uuid} recuperada.")
+                logger.debug(f"Solicitud {recover_uuid} recuperada.")
                 messages.success(request, "Solicitud recuperada exitosamente.")
                 return redirect(
                     "operaciones:seleccion_tipo_operacion", uuid=base_instance.uuid
@@ -84,7 +83,6 @@ class SolicitudBaseCreateView(
                 messages.error(
                     request, "No se encontró una operación con el UUID proporcionado."
                 )
-        logger.debug("Mostrando formulario de solicitud base")
         return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):

@@ -14,7 +14,7 @@ class OperacionesService:
         plazos_fijos = base_request.plazos_fijos.all()
         operaciones = list(compras) + list(ventas) + list(canjes) + list(plazos_fijos)
         # Ordenar por fecha de movimiento
-        operaciones.sort(key=lambda op: op.fecha_movimiento)
+        operaciones.sort(key=lambda op: op.fecha_operacion)
         return operaciones
 
     @staticmethod

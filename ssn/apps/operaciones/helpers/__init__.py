@@ -15,7 +15,7 @@ from .mixins import (
 from .model_utils import get_mapping_model, get_related_names_map
 from .text_utils import camel_to_title, to_camel_case
 
-__all_ = [
+__all__ = [
     "generate_monthly_options",
     "generate_week_options",
     "get_default_cronograma",

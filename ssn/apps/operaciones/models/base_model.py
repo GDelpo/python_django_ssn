@@ -46,5 +46,9 @@ class BaseOperacionModel(models.Model):
     fecha_movimiento = models.DateField(help_text="Fecha de movimiento (DDMMYYYY)")
     fecha_liquidacion = models.DateField(help_text="Fecha de liquidación (DDMMYYYY)")
 
+    @property
+    def fecha_operacion(self):
+        return self.fecha_movimiento
+
     class Meta:
         abstract = True
