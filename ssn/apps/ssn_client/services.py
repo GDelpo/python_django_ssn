@@ -96,9 +96,11 @@ def enviar_y_guardar_solicitud(base_request, operations, allow_empty=False):
         base_request.save()
         logger.info(f"Solicitud {base_request.uuid} enviada correctamente")
         return confirm_response, confirm_status, obj_confirm
-    
+
     except Exception as e:
-        logger.error(f"Error inesperado enviando solicitud {base_request.uuid}: {str(e)}")
+        logger.error(
+            f"Error inesperado enviando solicitud {base_request.uuid}: {str(e)}"
+        )
         return (
             {"error": "Error inesperado en el servidor", "detalle": str(e)},
             HTTPStatus.INTERNAL_SERVER_ERROR,
