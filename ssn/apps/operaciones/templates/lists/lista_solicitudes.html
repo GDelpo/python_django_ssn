@@ -38,7 +38,7 @@
                 <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">Fecha de Creación</span>
                 <div class="flex items-center justify-center md:justify-start">
                   <i class="fas fa-clock text-gray-400 mr-2"></i>
-                  {{ solicitud.created_at|date:"d/m/Y H:i" }} <strong class="text-tiny text-gray-500">({{ solicitud.created_at|date:"H:i" }})</strong>
+                  {{ solicitud.created_at|date:"d/m/Y" }} <small class="text-tiny">({{ solicitud.created_at|date:"H:i" }})</small>
                 </div>
               </td>
               <td role="gridcell" class="px-2 py-2 md:table-cell block text-sm text-gray-700 text-center md:text-left" data-label="Estado">
@@ -46,7 +46,7 @@
                 <div class="flex items-center justify-center md:justify-start">
                   {% if solicitud.send_at %}
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <i class="fas fa-check-circle mr-0.5"></i>Enviada <strong class="text-tiny">({{ solicitud.send_at|date:"d/m/Y" }})</strong>
+                      <i class="fas fa-check-circle mr-0.5"></i>Enviada <small class="text-tiny">({{ solicitud.send_at|date:"d/m/Y" }})</small>
                     </span>
                   {% else %}
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
