@@ -1651,6 +1651,11 @@ select {
   line-height: 1rem;
 }
 
+.text-tiny {
+  font-size: 0.5625rem;
+  line-height: 0.8rem;
+}
+
 .text-6xl {
   font-size: 3.75rem;
   line-height: 1;
