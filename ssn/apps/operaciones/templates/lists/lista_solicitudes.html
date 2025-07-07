@@ -56,25 +56,22 @@
                 </div>
               </td>
               <td role="gridcell" class="px-2 py-2 md:table-cell block text-sm text-gray-700 text-center md:text-left" data-label="Respuesta">
-                <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">Respuesta</span>
+                <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">Respuestas</span>
                 <div class="flex items-center justify-center md:justify-start">
-                  {% with respuesta=solicitud.respuestas.first %}
-                    {% if respuesta %}
-                      {% url 'operaciones:detalle_respuesta' pk=respuesta.id as resp_url %}
-                      {% if respuesta.es_error %}
-                        <a href="{{ resp_url }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:underline">
-                          <i class="fas fa-times-circle mr-0.5"></i>Error
-                        </a>
-                      {% else %}
-                        <a href="{{ resp_url }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:underline">
-                          <i class="fas fa-check-circle mr-0.5"></i>OK
-                        </a>
-                      {% endif %}
-                    {% else %}
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        <i class="fas fa-minus mr-0.5"></i>
-                      </span>
-                    {% endif %}
+                  {% url 'operaciones:solicitud_respuesta' uuid=solicitud.uuid as resp_url %}  
+                  {% if solicitud.tiene_error %}
+                    <a href="{{ resp_url }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:underline">
+                      <i class="fas fa-times-circle mr-0.5"></i>Error
+                    </a>
+                  {% elif solicitud.respuestas.first %}
+                    <a href="{{ resp_url }}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:underline">
+                      <i class="fas fa-check-circle mr-0.5"></i>OK
+                    </a>                    
+                  {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <i class="fas fa-minus mr-0.5"></i>
+                    </span>
+                  {% endif %}
                   {% endwith %}
                 </div>
               </td>

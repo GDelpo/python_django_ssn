@@ -3,6 +3,7 @@ import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
+from django.db.models import Exists, OuterRef
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
@@ -15,6 +16,7 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
+from ssn_client.models import SolicitudResponse
 from ssn_client.services import enviar_y_guardar_solicitud
 
 from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
@@ -125,7 +127,19 @@ class SolicitudBaseListView(
 
     def get_queryset(self):
         SessionService.clear_base_request(self.request)
-        return BaseRequestModel.objects.all().prefetch_related("respuestas")
+        # Prefetch para evitar N+1 en respuestas, y annotate para el estado error
+        return (
+            BaseRequestModel.objects.all()
+            .prefetch_related("respuestas")
+            .annotate(
+                tiene_error=Exists(
+                    SolicitudResponse.objects.filter(
+                        solicitud=OuterRef("pk"),
+                        es_error=True,
+                    )
+                )
+            )
+        )
 
 
 class OperacionListView(
