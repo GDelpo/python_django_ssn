@@ -91,7 +91,7 @@ class PlazoFijoOperacion(models.Model):
             raise ValidationError(errors)
 
     def __str__(self):
-        return f"Plazo Fijo - {self.cdf} - {self.fecha_constitucion}"
+        return f"{self.cdf}"
 
     @property
     def fecha_operacion(self):

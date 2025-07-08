@@ -1,7 +1,7 @@
 {# ssn/apps/operaciones/templates/operaciones/forms/operacion.html #}
 {% extends "forms/partials/_base.html" %}
 
-{% block title %}Formulario de Operación{% endblock %}
+{% block title %}Formulario de Operación {% endblock %}
 
 {% block form_fields %}
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -54,17 +54,30 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      initToggleFields({
-        triggerId: 'id_tipo_especie',
-        dependentIds: ['id_fecha_pase_vt', 'id_precio_pase_vt'],
-        triggerIdsAlt: ['id_tipo_valuacion'],
-        shouldShowFn: function(especie, valuacion) {
-          return (especie === 'TP' || especie === 'ON') && valuacion === 'T';
-        }
+  {% if form.tipo_operacion.value == 'V' %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        initToggleFields({
+          triggerId: 'id_tipo_especie',
+          dependentIds: ['id_fecha_pase_vt', 'id_precio_pase_vt'],
+          triggerIdsAlt: ['id_tipo_valuacion'],
+          shouldShowFn: function(especie, valuacion) {
+            return (especie === 'TP' || especie === 'ON') && valuacion === 'T';
+          }
+        });
       });
-    });
-  </script>
+    </script>
+  {% elif form.tipo_operacion.value == 'P' %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        initToggleFields({
+          triggerId: 'id_titulo_deuda',                
+          dependentIds: ['id_codigo_titulo'],           
+          shouldShowFn: function() {
+            return document.getElementById('id_titulo_deuda').checked;
+          }
+        });
+      });
+    </script>
+  {% endif %}
 {% endblock %}
-

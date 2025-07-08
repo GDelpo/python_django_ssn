@@ -54,11 +54,30 @@ class CustomDateField(serializers.DateField):
         Returns:
             str: Fecha formateada o None
         """
-        formatted = value.strftime("%d%m%Y") if value else None
+        formatted = value if value else None
         logger.debug(f"Fecha formateada: {value} -> {formatted}")
         return formatted
 
+class CustomBooleanField(serializers.BooleanField):
+    """
+    Campo booleano personalizado que convierte valores booleanos a "1" o "0" (string).
+    Utilizado para compatibilidad con servicios externos que esperan strings.
+    """
 
+    def to_representation(self, value):
+        """
+        Convierte el valor booleano a "1" o "0".
+
+        Args:
+            value (bool): Valor booleano a formatear
+
+        Returns:
+            str: "1" para True, "0" para False
+        """
+        formatted = "1" if value else "0"
+        logger.debug(f"Valor booleano formateado: {value} -> {formatted}")
+        return formatted
+    
 class CamelCaseModelSerializer(serializers.ModelSerializer):
     """
     Serializador base que transforma la representación de los datos a camelCase.
