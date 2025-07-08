@@ -143,6 +143,10 @@ class CamelCaseModelSerializer(serializers.ModelSerializer):
         if isinstance(model_field, (models.DateField, models.DateTimeField)):
             field_class = CustomDateField
             logger.debug(f"Campo de fecha personalizado aplicado: {field_name}")
+        elif isinstance(model_field, models.BooleanField):
+            field_class = CustomBooleanField
+            logger.debug(f"Campo booleano personalizado aplicado: {field_name}")
+            
         return field_class, field_kwargs
 
 
