@@ -21,7 +21,6 @@ class BaseRequestModel(models.Model):
     cronograma = models.CharField(
         max_length=7,
         validators=[MinLengthValidator(7)],
-        unique=True,
         help_text="Periodo del cronograma (YYYY-MM)",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -35,6 +34,9 @@ class BaseRequestModel(models.Model):
         verbose_name_plural = "Solicitudes Base"
         db_table = "db_solicitudes_base"
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["tipo_entrega", "cronograma"], name="unique_entrega_cronograma")
+        ]
 
 
 class BaseOperacionModel(models.Model):
