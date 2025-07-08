@@ -30,6 +30,17 @@ def enviar_y_guardar_solicitud(base_request, operations, allow_empty=False):
     try:
         from operaciones.serializers import serialize_operations
 
+        # 0) Chequeo: ¿ya fue enviada?
+        if base_request.send_at:
+            logger.warning(
+                f"La solicitud {base_request.uuid} ya fue enviada el {base_request.send_at}."
+            )
+            return (
+                {"error": f"Esta solicitud ya fue enviada el {base_request.send_at.strftime('%d/%m/%Y %H:%M')}. No se puede volver a enviar."},
+                HTTPStatus.BAD_REQUEST,
+                None,
+            )
+
         # 1) Validar presencia de operaciones (a menos que permitamos vacío)
         if not operations and not allow_empty:
             logger.warning(
