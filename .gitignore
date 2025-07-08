@@ -71,3 +71,6 @@ __pycache__/
 
 # nginx
 nginx/default.conf
+
+# Fixtures
+weeks_data_fixture.json

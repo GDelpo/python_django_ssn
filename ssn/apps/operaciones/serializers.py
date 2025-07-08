@@ -146,7 +146,7 @@ class CamelCaseModelSerializer(serializers.ModelSerializer):
         elif isinstance(model_field, models.BooleanField):
             field_class = CustomBooleanField
             logger.debug(f"Campo booleano personalizado aplicado: {field_name}")
-            
+
         return field_class, field_kwargs
 
 
@@ -231,7 +231,7 @@ def serialize_operations(base_instance, operations, pre_serialized=False):
                     logger.warning(
                         f"No se encontró tipo_operacion para instancia {op}."
                     )
-                    continue  # O podrías intentar deducir el tipo por el modelo
+                    continue
 
                 serializer_class = create_model_serializer(tipo)
                 serialized_data = serializer_class(op).data
