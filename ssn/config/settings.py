@@ -100,13 +100,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "operaciones",
-    "theme",
     "csp",  # Content Security Policy
+    "operaciones",
+    "theme",    
     "tailwind",
     "django_browser_reload",
     "rest_framework",
     "ssn_client",
+    "django_cleanup.apps.CleanupConfig",
 ]
 
 TAILWIND_APP_NAME = "theme"

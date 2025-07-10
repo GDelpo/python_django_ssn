@@ -259,7 +259,7 @@ python manage.py clean_preview_excels --hours 1
 > **Ejemplo de entrada en crontab para ejecutarlo periódicamente:**
 >
 > ```cron
-> 0 * * * * docker compose exec web python ssn/manage.py clean_preview_excels
+> 0 * * * * docker compose exec web python ssn/manage.py clean_preview_excels # “At minute 0.”
 > 0 * * * 1 docker compose exec web python ssn/manage.py clean_requests # “At minute 0 on Monday.”
 > ```
 >
