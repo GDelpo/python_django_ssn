@@ -1,35 +1,39 @@
 import logging
-from django.core.management.base import BaseCommand
-from django.utils import timezone
 from datetime import timedelta
 
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+
 from ...models import BaseRequestModel
+from ...services import OperacionesService
 
 logger = logging.getLogger("operaciones")
+
 
 class Command(BaseCommand):
     help = "Deletes unsent and empty requests older than X days"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--days',
+            "--days",
             type=int,
             default=7,
-            help='Age in days to consider for deletion (default: 7)'
+            help="Age in days to consider for deletion (default: 7)",
         )
 
     def handle(self, *args, **options):
-        days = options['days']
+        days = options["days"]
         cutoff = timezone.now() - timedelta(days=days)
 
-        # Select requests not sent and created before the cutoff
         qs = BaseRequestModel.objects.filter(
-            send_at__isnull=True,
-            created_at__lt=cutoff
+            send_at__isnull=True, created_at__lt=cutoff
         )
 
-        # Filter requests with no associated operations (adjust related_name as needed)
-        empty = [req for req in qs if not req.operations.exists()]
+        empty = []
+        for req in qs:
+            counts = OperacionesService.get_count_by_tipo(req)
+            if all(count == 0 for count in counts.values()):
+                empty.append(req)
 
         count = len(empty)
         deleted_ids = [req.id for req in empty]
