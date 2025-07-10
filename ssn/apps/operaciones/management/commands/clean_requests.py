@@ -36,15 +36,16 @@ class Command(BaseCommand):
                 empty.append(req)
 
         count = len(empty)
-        deleted_ids = [req.id for req in empty]
-        for req in empty:
-            req.delete()
+        if count != 0:
+            deleted_ids = [str(req.uuid) for req in empty]
+            for req in empty:
+                req.delete()
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Deleted {count} unsent and empty requests older than {days} days."
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Deleted {count} unsent and empty requests older than {days} days."
+                )
             )
-        )
-        logger.info(
-            f"[clean_requests] Deleted {count} requests (IDs: {deleted_ids}) older than {days} days."
-        )
+            logger.info(
+                f"[clean_requests] Deleted {count} requests (UUIDs: {deleted_ids}) older than {days} days."
+            )

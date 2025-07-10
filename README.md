@@ -3,9 +3,9 @@
 Sistema de gestión de operaciones financieras para presentación a la Superintendencia de Seguros de la Nación (SSN).
 
 ![Docker](https://img.shields.io/badge/Docker-ready-blue)
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue) 
-![Django](https://img.shields.io/badge/Django-4.0%2B-blue) 
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13%2B-blue) 
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue) 
+![Django](https://img.shields.io/badge/Django-5.1%2B-blue) 
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-blue) 
 ![NGINX](https://img.shields.io/badge/NGINX-1.19%2B-blue)
 
 ## 📋 Descripción
@@ -26,7 +26,8 @@ Esta aplicación permite gestionar, registrar y enviar operaciones financieras a
 
 ### Requisitos previos
 
-- Docker y Docker Compose (Revisar version, cambia el comando de docker-compose)
+- Docker y Docker Compose (`docker compose`, versión 2+)
+- Node.js y npm (para compilar Tailwind CSS)
 - Git
 
 ### Instalación con Docker (recomendado)
@@ -48,15 +49,23 @@ cp .env-example .env # Editar .env con tus valores
 cp nginx/default.conf-example nginx/default.conf # Editar default.conf con tu dominio e IP que agregamos en el .env
 ```
 
-3. **Construir e iniciar con Docker Compose**
+3. **Preparar carpetas de media**
 
 ```bash
-docker-compose build --no-cache && docker-compose up -d
+./prepare_media.sh
+```
+
+**‼ Es importante ejecutarlo al menos una vez antes del primer `docker compose up`.**
+
+4. **Construir e iniciar con Docker Compose**
+
+```bash
+docker compose build --no-cache && docker compose up -d
 ```
 
 4. **Acceder a la aplicación**
 
-La aplicación estará disponible en http://localhost:8888 (o el puerto que hayas configurado en NGINX_PORT).
+La aplicación estará disponible en http://localhost:8888 (o el puerto que hayas configurado en NGINX_PORT).  
 Con SSL configurado, también estará en https://tu-dominio.com
 
 ### Instalación local (desarrollo)
@@ -121,13 +130,14 @@ python manage.py runserver
 ├── .env-example             # Plantilla para variables de entorno
 ├── .env                     # Variables de entorno (no incluido en Git)
 ├── Dockerfile               # Configuración para Docker
+├── Dockerfile.nginx         # Configuración específica para Nginx
 ├── docker-compose.yml       # Configuración de servicios
-├── entrypoint.sh            # Script de inicio para Docker
+├── entrypoint.sh            # Script de inicio para el contenedor web
 ├── nginx/                   # Configuración de Nginx
 │   ├── default.conf-example # Plantilla de configuración de Nginx
 │   └── default.conf         # Configuración de Nginx (no incluido en Git)
-├── nginx-entrypoint.sh      # Script para iniciar Nginx con SSL
-├── init-letsencrypt.sh      # Script para configurar certificados SSL
+├── nginx-entrypoint.sh      # Script de inicio para Nginx con certificados
+├── prepare_media.sh         # Crea carpetas necesarias con permisos
 ├── requirements.txt         # Dependencias de Python
 └── ssn/                     # Código principal de la aplicación
     ├── manage.py
@@ -146,15 +156,6 @@ python manage.py runserver
 2. **Agregar operaciones**: Añade operaciones financieras específicas a la solicitud.
 3. **Revisar solicitud**: Verifica los datos antes del envío a la SSN.
 4. **Enviar a SSN**: Transmite la información a la Superintendencia de Seguros de la Nación.
-
-## 🧪 Testing
-
-Para ejecutar las pruebas unitarias de la aplicación, solo del cliente de la API de SSN:
-
-```bash
-cd ssn
-python manage.py test
-```
 
 ## 🔄 Variables de Entorno
 
@@ -183,7 +184,7 @@ Las principales variables de entorno que debes configurar:
 Para respaldar la base de datos:
 
 ```bash
-docker-compose exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup_$(date +%Y%m%d_%H%M%S).sql
+docker compose exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup_$(date +%Y%m%d_%H%M%S).sql
 ```
 
 ### Logs
@@ -191,7 +192,7 @@ docker-compose exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup_$(date +%
 Para ver los logs de la aplicación:
 
 ```bash
-docker-compose logs web
+docker compose logs web
 ```
 
 ### Actualizaciones
@@ -200,8 +201,8 @@ Para actualizar la aplicación:
 
 ```bash
 git pull
-docker-compose down
-docker-compose up -d --build
+docker compose down
+docker compose up -d --build
 ```
 
 ### Renovación de certificados SSL
@@ -209,29 +210,35 @@ docker-compose up -d --build
 Los certificados se renuevan automáticamente con el contenedor certbot, pero si necesitas renovación manual:
 
 ```bash
-docker-compose exec certbot certbot renew
-docker-compose restart nginx
+docker compose exec certbot certbot renew
+docker compose restart nginx
 ```
 
-### Limpieza de archivos de previews
+### Limpieza de solicitudes antiguas (sin enviar y vacías)
 
-Define el tiempo de retención en el archivo `.env` con la variable `PREVIEW_MAX_AGE_MINUTES`.
-Si no se indica `--max-age-minutes`, se usará el valor configurado en esa variable.
-Para eliminar archivos temporales generados en `media/previews`, puedes usar el comando:
+El comando `clean_requests` elimina solicitudes sin operaciones que no fueron enviadas,
+y cuya antigüedad supera cierta cantidad de días (por defecto, 7 días).
+
+Puedes ejecutarlo de estas dos formas:
+
+**Desde contenedor Docker:**
 
 ```bash
-python manage.py cleanup_previews --max-age-minutes 5
+docker compose exec web python ssn/manage.py clean_requests --days 7 # Reemplaza 7 por el número de días que desees (Es opcional usar --days)
 ```
 
-Programar este comando en `cron` cada 15 minutos mantendrá limpia la carpeta:
+**En entorno local de desarrollo:**
 
-```cron
-*/15 * * * * cd /ruta/a/python_django_ssn/ssn && ./manage.py cleanup_previews --max-age-minutes 5
+```bash
+cd ssn
+python manage.py clean_requests --days 7 # Reemplaza 7 por el número de días que desees (Es opcional usar --days)
 ```
+
+> 💡 **Se recomienda programar este comando en el *host* mediante `cron`.** Podés utilizar herramientas como [crontab.guru](https://crontab.guru/) para validar y entender la sintaxis.
 
 ## 🛡️ Seguridad
 
-Este repositorio está configurado para no incluir archivos con información sensible.
+Este repositorio está configurado para no incluir archivos con información sensible.  
 Los archivos con datos sensibles no deben subirse a Git:
 
 - `.env` (contiene contraseñas y claves)
@@ -239,7 +246,5 @@ Los archivos con datos sensibles no deben subirse a Git:
 
 ## ✏ TODOs
 
-- [ ] Generar presentación MENSUAL de operaciones a la SSN.
-- [ ] Agregar Background Tasks, limpieza de logs y operaciones viejas ("vencidas").
-- [ ] Revisar APIS BYMA, para poder generar reportes, etc.
-- [ ] Mejorar estructura de templates y CSS.
+- Generar presentación MENSUAL de operaciones a la SSN.
+- Revisar APIS BYMA, para poder generar reportes, etc.
