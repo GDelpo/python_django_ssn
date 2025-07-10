@@ -36,7 +36,9 @@ def enviar_y_guardar_solicitud(base_request, operations, allow_empty=False):
                 f"La solicitud {base_request.uuid} ya fue enviada el {base_request.send_at}."
             )
             return (
-                {"error": f"Esta solicitud ya fue enviada el {base_request.send_at.strftime('%d/%m/%Y %H:%M')}. No se puede volver a enviar."},
+                {
+                    "error": f"Esta solicitud ya fue enviada el {base_request.send_at.strftime('%d/%m/%Y %H:%M')}. No se puede volver a enviar."
+                },
                 HTTPStatus.BAD_REQUEST,
                 None,
             )

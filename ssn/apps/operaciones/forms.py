@@ -116,17 +116,24 @@ class BaseRequestForm(forms.ModelForm):
 
         # Validar si ya existe un cronograma con el mismo valor
         qs = BaseRequestModel.objects.filter(
-            cronograma=seleccionado,
-            tipo_entrega=tipo_entrega
+            cronograma=seleccionado, tipo_entrega=tipo_entrega
         )
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            logger.warning(f"Ya existe una solicitud con tipo_entrega='{tipo_entrega}' y cronograma='{seleccionado}'.")
+            logger.warning(
+                f"Ya existe una solicitud con tipo_entrega='{tipo_entrega}' y cronograma='{seleccionado}'."
+            )
             if tipo_entrega == "Mensual":
-                self.add_error("cronograma_mensual", "Ya existe una solicitud mensual para este cronograma.")
+                self.add_error(
+                    "cronograma_mensual",
+                    "Ya existe una solicitud mensual para este cronograma.",
+                )
             else:
-                self.add_error("cronograma_semanal", "Ya existe una solicitud semanal para este cronograma.")
+                self.add_error(
+                    "cronograma_semanal",
+                    "Ya existe una solicitud semanal para este cronograma.",
+                )
 
         # Guardar el cronograma en los datos validados
         cleaned_data["cronograma"] = seleccionado

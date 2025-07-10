@@ -5,19 +5,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('operaciones', '0005_alter_plazofijooperacion_bic_and_more'),
+        ("operaciones", "0005_alter_plazofijooperacion_bic_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='baserequestmodel',
-            name='cronograma',
-            field=models.CharField(help_text='Periodo del cronograma (YYYY-MM)', max_length=7, validators=[django.core.validators.MinLengthValidator(7)]),
+            model_name="baserequestmodel",
+            name="cronograma",
+            field=models.CharField(
+                help_text="Periodo del cronograma (YYYY-MM)",
+                max_length=7,
+                validators=[django.core.validators.MinLengthValidator(7)],
+            ),
         ),
         migrations.AddConstraint(
-            model_name='baserequestmodel',
-            constraint=models.UniqueConstraint(fields=('tipo_entrega', 'cronograma'), name='unique_entrega_cronograma'),
+            model_name="baserequestmodel",
+            constraint=models.UniqueConstraint(
+                fields=("tipo_entrega", "cronograma"), name="unique_entrega_cronograma"
+            ),
         ),
     ]

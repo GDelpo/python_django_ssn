@@ -35,7 +35,9 @@ class BaseRequestModel(models.Model):
         db_table = "db_solicitudes_base"
         ordering = ["-created_at"]
         constraints = [
-            models.UniqueConstraint(fields=["tipo_entrega", "cronograma"], name="unique_entrega_cronograma")
+            models.UniqueConstraint(
+                fields=["tipo_entrega", "cronograma"], name="unique_entrega_cronograma"
+            )
         ]
 
 
