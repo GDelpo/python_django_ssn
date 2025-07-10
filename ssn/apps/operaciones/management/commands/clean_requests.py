@@ -7,7 +7,7 @@ from django.utils import timezone
 from ...models import BaseRequestModel
 from ...services import OperacionesService
 
-logger = logging.getLogger("operaciones")
+logger = logging.getLogger("general")
 
 
 class Command(BaseCommand):

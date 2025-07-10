@@ -214,27 +214,56 @@ docker compose exec certbot certbot renew
 docker compose restart nginx
 ```
 
-### Limpieza de solicitudes antiguas (sin enviar y vacías)
+### 🔹 Limpieza de solicitudes antiguas (sin enviar y vacías)
 
-El comando `clean_requests` elimina solicitudes sin operaciones que no fueron enviadas,
-y cuya antigüedad supera cierta cantidad de días (por defecto, 7 días).
-
-Puedes ejecutarlo de estas dos formas:
+El comando `clean_requests` elimina solicitudes sin operaciones asociadas, que no fueron enviadas y cuya antigüedad supera cierta cantidad de días (**por defecto, 7 días**).
 
 **Desde contenedor Docker:**
 
 ```bash
-docker compose exec web python ssn/manage.py clean_requests --days 7 # Reemplaza 7 por el número de días que desees (Es opcional usar --days)
+docker compose exec web python ssn/manage.py clean_requests --days 7
+# Reemplaza 7 por el número de días que desees (el parámetro --days es opcional)
 ```
 
 **En entorno local de desarrollo:**
 
 ```bash
 cd ssn
-python manage.py clean_requests --days 7 # Reemplaza 7 por el número de días que desees (Es opcional usar --days)
+python manage.py clean_requests --days 7
+# Reemplaza 7 por el número de días que desees (el parámetro --days es opcional)
 ```
 
-> 💡 **Se recomienda programar este comando en el *host* mediante `cron`.** Podés utilizar herramientas como [crontab.guru](https://crontab.guru/) para validar y entender la sintaxis.
+---
+
+### 🔹 Limpieza de archivos Excel de previews
+
+El comando `clean_preview_excels` elimina archivos temporales de Excel generados como preview para solicitudes, cuya antigüedad supera cierta cantidad de horas (**por defecto, 1 hora**).
+
+**Desde contenedor Docker:**
+
+```bash
+docker compose exec web python ssn/manage.py clean_preview_excels --hours 1
+# Reemplaza 1 por la cantidad de horas que desees (el parámetro --hours es opcional)
+```
+
+**En entorno local de desarrollo:**
+
+```bash
+cd ssn
+python manage.py clean_preview_excels --hours 1
+# Reemplaza 1 por la cantidad de horas que desees (el parámetro --hours es opcional)
+```
+
+> 💡 **Se recomienda programar estos comandos en el *host* mediante `cron`** para que la limpieza sea automática y la aplicación no acumule datos ni archivos innecesarios.
+>
+> **Ejemplo de entrada en crontab para ejecutarlo periódicamente:**
+>
+> ```cron
+> 0 * * * * docker compose exec web python ssn/manage.py clean_preview_excels
+> 0 * * * 1 docker compose exec web python ssn/manage.py clean_requests # “At minute 0 on Monday.”
+> ```
+>
+> Herramienta útil para probar la sintaxis: [crontab.guru](https://crontab.guru/)
 
 ## 🛡️ Seguridad
 
