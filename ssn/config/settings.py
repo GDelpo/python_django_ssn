@@ -17,7 +17,7 @@ from pathlib import Path
 from decouple import Csv, config
 
 # Importar configuración de logging
-from .settings.logging_config import get_logging_config
+from .logging_config import get_logging_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -102,7 +102,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "csp",  # Content Security Policy
     "operaciones",
-    "theme",    
+    "theme",
     "tailwind",
     "django_browser_reload",
     "rest_framework",

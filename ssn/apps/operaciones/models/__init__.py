@@ -4,6 +4,12 @@ Módulo principal de modelos que expone los modelos base y de operación.
 
 from .base_model import BaseRequestModel
 from .choices import TipoEntrega, TipoEspecie, TipoOperacion, TipoTasa, TipoValuacion
+from .monthly_stock_model import (
+    ChequePagoDiferidoStock,
+    InversionStock,
+    PlazoFijoStock,
+    TipoStock,
+)
 from .operaciones import (
     CanjeOperacion,
     CompraOperacion,
@@ -24,4 +30,8 @@ __all__ = [
     "TipoEntrega",
     "DetalleOperacionCanje",
     "TipoTasa",
+    "InversionStock",
+    "PlazoFijoStock",
+    "ChequePagoDiferidoStock",
+    "TipoStock",
 ]

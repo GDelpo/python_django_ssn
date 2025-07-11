@@ -1,24 +1,26 @@
 import logging
 import os
-from django.core.management.base import BaseCommand
-from django.conf import settings
 from datetime import datetime, timedelta
 
+from django.conf import settings
+from django.core.management.base import BaseCommand
+
 logger = logging.getLogger("general")
+
 
 class Command(BaseCommand):
     help = "Deletes preview Excel files older than X hours"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--hours',
+            "--hours",
             type=int,
             default=1,
-            help='Age in hours to consider for deletion (default: 1)'
+            help="Age in hours to consider for deletion (default: 1)",
         )
 
     def handle(self, *args, **options):
-        hours = options['hours']
+        hours = options["hours"]
         cutoff = datetime.now() - timedelta(hours=hours)
 
         previews_path = os.path.join(settings.MEDIA_ROOT, "previews")
@@ -51,7 +53,9 @@ class Command(BaseCommand):
             )
         else:
             self.stdout.write(
-                self.style.WARNING(f"No preview Excel files older than {hours} hours found.")
+                self.style.WARNING(
+                    f"No preview Excel files older than {hours} hours found."
+                )
             )
             logger.info(
                 f"[clean_preview_excels] No files to delete older than {hours} hours."
