@@ -21,5 +21,8 @@ else
   echo "✅ Certificado ya existe"
 fi
 
+echo "⚙️  Renderizando configuración Nginx desde template..."
+envsubst < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+
 echo "🚀 Iniciando Nginx..."
 exec nginx -g "daemon off;"

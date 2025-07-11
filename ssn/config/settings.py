@@ -17,7 +17,7 @@ from pathlib import Path
 from decouple import Csv, config
 
 # Importar configuración de logging
-from .logging_config import get_logging_config
+from .settings.logging_config import get_logging_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

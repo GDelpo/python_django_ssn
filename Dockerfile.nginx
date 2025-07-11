@@ -3,15 +3,18 @@ FROM nginx:alpine
 
 LABEL maintainer="tu@correo.com"
 
-# 1. Instala herramientas
+# 1. Instala herramientas necesarias
 RUN apk add --no-cache openssl certbot
 
 # 2. Copia el entrypoint
 COPY nginx-entrypoint.sh /usr/local/bin/nginx-entrypoint.sh
 RUN chmod +x /usr/local/bin/nginx-entrypoint.sh
 
-# 3. Copia tu conf de Nginx
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+# 3. Copia el template de config (NO el archivo fijo)
+COPY nginx/default.conf.template /etc/nginx/conf.d/default.conf.template
 
+# 4. (Opcional) Si tenés archivos estáticos, copialos también
+
+# 5. Setea el entrypoint
 ENTRYPOINT ["/usr/local/bin/nginx-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
