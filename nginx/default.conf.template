@@ -1,6 +1,6 @@
 # Configuración para HTTP
 server {
-    listen ${NGINX_PORT_HTTP};
+    listen 80;
     server_name ${NGINX_SERVER_NAME};
 
     # Ruta para el desafío ACME de Certbot
@@ -10,19 +10,19 @@ server {
 
     # Redirigir todo el tráfico a HTTPS
     location / {
-        return 301 https://${SSL_DOMAIN}$request_uri;
+        return 301 https://$host$request_uri;
     }
 }
 
 # Configuración para HTTPS
 server {
-    listen ${NGINX_PORT_HTTPS} ssl;
+    listen 443 ssl;
     server_name ${NGINX_SERVER_NAME};
 
-    # Certificados SSL - rutas dinámicas
+    # Certificados SSL
     ssl_certificate /etc/letsencrypt/live/${SSL_DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${SSL_DOMAIN}/privkey.pem;
-    
+
     # Configuraciones de seguridad SSL
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
@@ -30,7 +30,7 @@ server {
     ssl_session_cache shared:SSL:10m;
     ssl_session_timeout 1d;
     ssl_session_tickets off;
-    
+
     # HSTS
     add_header Strict-Transport-Security "max-age=31536000" always;
 
@@ -59,11 +59,12 @@ server {
         return 200 "OK";
     }
 
-    # Netdata/status - ajustar rangos según tu red si querés
+    # Netdata / status (ajustar según tu red)
     location /nginx_status {
         stub_status on;
         access_log off;
-        allow 192.168.0.0/16;
+        allow 192.168.64.0/24;
+        allow 192.168.32.0/24;
         allow 127.0.0.1;
         deny all;
     }
