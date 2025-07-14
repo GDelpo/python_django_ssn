@@ -5,106 +5,458 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('operaciones', '0006_alter_baserequestmodel_cronograma_and_more'),
+        ("operaciones", "0006_alter_baserequestmodel_cronograma_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ChequePagoDiferidoStock',
+            name="ChequePagoDiferidoStock",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('codigo_afectacion', models.CharField(help_text='Código de afectación', max_length=3)),
-                ('tipo_valuacion', models.CharField(choices=[('T', 'Técnico'), ('V', 'Mercado')], help_text='Tipo de valuación', max_length=1)),
-                ('con_cotizacion', models.BooleanField(default=True, help_text='Indicador de cotización (1: Sí, 0: No)')),
-                ('libre_disponibilidad', models.BooleanField(default=True, help_text='Libre disponibilidad (1: Sí, 0: No)')),
-                ('emisor_grupo_economico', models.BooleanField(default=False, help_text='Emisor pertenece a grupo económico')),
-                ('emisor_art_ret', models.BooleanField(default=False, help_text='Emisor ART/RET')),
-                ('en_custodia', models.BooleanField(default=True, help_text='Indicador en custodia')),
-                ('financiera', models.BooleanField(default=True, help_text='Indicador financiera')),
-                ('valor_contable', models.BigIntegerField(help_text='Valor contable')),
-                ('tipo', models.CharField(choices=[('I', 'Inversión'), ('P', 'Plazo Fijo'), ('C', 'Cheque Pago Diferido')], default='C', editable=False, help_text='C = Cheque Pago Diferido', max_length=1)),
-                ('codigo_sgr', models.CharField(help_text='Código SGR', max_length=3)),
-                ('codigo_cheque', models.CharField(help_text='Código del cheque', max_length=16)),
-                ('fecha_emision', models.DateField(help_text='Fecha de emisión (DDMMYYYY)')),
-                ('fecha_vencimiento', models.DateField(help_text='Fecha de vencimiento (DDMMYYYY)')),
-                ('moneda', models.CharField(help_text='Código de moneda', max_length=3)),
-                ('valor_nominal', models.DecimalField(decimal_places=0, help_text='Valor nominal del cheque', max_digits=10)),
-                ('valor_adquisicion', models.DecimalField(decimal_places=0, help_text='Valor de adquisición del cheque', max_digits=10)),
-                ('fecha_adquisicion', models.DateField(help_text='Fecha de adquisición (DDMMYYYY)')),
-                ('tipo_tasa', models.CharField(help_text='Tipo de tasa (F=Fija, V=Variable)', max_length=1)),
-                ('tasa', models.DecimalField(decimal_places=3, help_text='Tasa aplicada', max_digits=5)),
-                ('solicitud', models.ForeignKey(help_text='Solicitud mensual a la que pertenece este stock', on_delete=django.db.models.deletion.CASCADE, related_name='stocks_chequespd_mensuales', to='operaciones.baserequestmodel')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "codigo_afectacion",
+                    models.CharField(help_text="Código de afectación", max_length=3),
+                ),
+                (
+                    "tipo_valuacion",
+                    models.CharField(
+                        choices=[("T", "Técnico"), ("V", "Mercado")],
+                        help_text="Tipo de valuación",
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "con_cotizacion",
+                    models.BooleanField(
+                        default=True, help_text="Indicador de cotización (1: Sí, 0: No)"
+                    ),
+                ),
+                (
+                    "libre_disponibilidad",
+                    models.BooleanField(
+                        default=True, help_text="Libre disponibilidad (1: Sí, 0: No)"
+                    ),
+                ),
+                (
+                    "emisor_grupo_economico",
+                    models.BooleanField(
+                        default=False, help_text="Emisor pertenece a grupo económico"
+                    ),
+                ),
+                (
+                    "emisor_art_ret",
+                    models.BooleanField(default=False, help_text="Emisor ART/RET"),
+                ),
+                (
+                    "en_custodia",
+                    models.BooleanField(
+                        default=True, help_text="Indicador en custodia"
+                    ),
+                ),
+                (
+                    "financiera",
+                    models.BooleanField(default=True, help_text="Indicador financiera"),
+                ),
+                ("valor_contable", models.BigIntegerField(help_text="Valor contable")),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            ("I", "Inversión"),
+                            ("P", "Plazo Fijo"),
+                            ("C", "Cheque Pago Diferido"),
+                        ],
+                        default="C",
+                        editable=False,
+                        help_text="C = Cheque Pago Diferido",
+                        max_length=1,
+                    ),
+                ),
+                ("codigo_sgr", models.CharField(help_text="Código SGR", max_length=3)),
+                (
+                    "codigo_cheque",
+                    models.CharField(help_text="Código del cheque", max_length=16),
+                ),
+                (
+                    "fecha_emision",
+                    models.DateField(help_text="Fecha de emisión (DDMMYYYY)"),
+                ),
+                (
+                    "fecha_vencimiento",
+                    models.DateField(help_text="Fecha de vencimiento (DDMMYYYY)"),
+                ),
+                (
+                    "moneda",
+                    models.CharField(help_text="Código de moneda", max_length=3),
+                ),
+                (
+                    "valor_nominal",
+                    models.DecimalField(
+                        decimal_places=0,
+                        help_text="Valor nominal del cheque",
+                        max_digits=10,
+                    ),
+                ),
+                (
+                    "valor_adquisicion",
+                    models.DecimalField(
+                        decimal_places=0,
+                        help_text="Valor de adquisición del cheque",
+                        max_digits=10,
+                    ),
+                ),
+                (
+                    "fecha_adquisicion",
+                    models.DateField(help_text="Fecha de adquisición (DDMMYYYY)"),
+                ),
+                (
+                    "tipo_tasa",
+                    models.CharField(
+                        help_text="Tipo de tasa (F=Fija, V=Variable)", max_length=1
+                    ),
+                ),
+                (
+                    "tasa",
+                    models.DecimalField(
+                        decimal_places=3, help_text="Tasa aplicada", max_digits=5
+                    ),
+                ),
+                (
+                    "solicitud",
+                    models.ForeignKey(
+                        help_text="Solicitud mensual a la que pertenece este stock",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="stocks_chequespd_mensuales",
+                        to="operaciones.baserequestmodel",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Stock Cheque Pago Diferido Mensual',
-                'verbose_name_plural': 'Stocks Cheque Pago Diferido Mensuales',
-                'ordering': ['-solicitud', 'codigo_cheque'],
+                "verbose_name": "Stock Cheque Pago Diferido Mensual",
+                "verbose_name_plural": "Stocks Cheque Pago Diferido Mensuales",
+                "ordering": ["-solicitud", "codigo_cheque"],
             },
         ),
         migrations.CreateModel(
-            name='InversionStock',
+            name="InversionStock",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('codigo_afectacion', models.CharField(help_text='Código de afectación', max_length=3)),
-                ('tipo_valuacion', models.CharField(choices=[('T', 'Técnico'), ('V', 'Mercado')], help_text='Tipo de valuación', max_length=1)),
-                ('con_cotizacion', models.BooleanField(default=True, help_text='Indicador de cotización (1: Sí, 0: No)')),
-                ('libre_disponibilidad', models.BooleanField(default=True, help_text='Libre disponibilidad (1: Sí, 0: No)')),
-                ('emisor_grupo_economico', models.BooleanField(default=False, help_text='Emisor pertenece a grupo económico')),
-                ('emisor_art_ret', models.BooleanField(default=False, help_text='Emisor ART/RET')),
-                ('en_custodia', models.BooleanField(default=True, help_text='Indicador en custodia')),
-                ('financiera', models.BooleanField(default=True, help_text='Indicador financiera')),
-                ('valor_contable', models.BigIntegerField(help_text='Valor contable')),
-                ('tipo', models.CharField(choices=[('I', 'Inversión'), ('P', 'Plazo Fijo'), ('C', 'Cheque Pago Diferido')], default='I', editable=False, help_text='I = Inversión', max_length=1)),
-                ('tipo_especie', models.CharField(choices=[('TP', 'Títulos Públicos'), ('ON', 'Obligaciones Negociables'), ('FC', 'Fondos Comunes de Inversión'), ('FF', 'Fideicomisos Financieros'), ('AC', 'Acciones'), ('OP', 'Otras Inversiones')], help_text='Tipo de especie (TP, ON, FC, etc.)', max_length=2)),
-                ('codigo_especie', models.CharField(help_text='Código SSN de la especie', max_length=20)),
-                ('cantidad_devengado_especies', models.DecimalField(decimal_places=6, help_text='Cantidad devengada de especies', max_digits=20)),
-                ('cantidad_percibido_especies', models.DecimalField(decimal_places=6, help_text='Cantidad percibida de especies', max_digits=20)),
-                ('prevision_desvalorizacion', models.DecimalField(decimal_places=0, default=0, help_text='Previsión desvalorización', max_digits=14)),
-                ('fecha_pase_vt', models.DateField(blank=True, help_text='Fecha de pase a VT (DDMMYYYY)', null=True)),
-                ('precio_pase_vt', models.DecimalField(blank=True, decimal_places=2, help_text='Precio de pase a VT', max_digits=12, null=True)),
-                ('valor_financiero', models.DecimalField(decimal_places=0, default=0, help_text='Valor financiero', max_digits=14)),
-                ('solicitud', models.ForeignKey(help_text='Solicitud mensual a la que pertenece este stock', on_delete=django.db.models.deletion.CASCADE, related_name='stocks_inversion_mensuales', to='operaciones.baserequestmodel')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "codigo_afectacion",
+                    models.CharField(help_text="Código de afectación", max_length=3),
+                ),
+                (
+                    "tipo_valuacion",
+                    models.CharField(
+                        choices=[("T", "Técnico"), ("V", "Mercado")],
+                        help_text="Tipo de valuación",
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "con_cotizacion",
+                    models.BooleanField(
+                        default=True, help_text="Indicador de cotización (1: Sí, 0: No)"
+                    ),
+                ),
+                (
+                    "libre_disponibilidad",
+                    models.BooleanField(
+                        default=True, help_text="Libre disponibilidad (1: Sí, 0: No)"
+                    ),
+                ),
+                (
+                    "emisor_grupo_economico",
+                    models.BooleanField(
+                        default=False, help_text="Emisor pertenece a grupo económico"
+                    ),
+                ),
+                (
+                    "emisor_art_ret",
+                    models.BooleanField(default=False, help_text="Emisor ART/RET"),
+                ),
+                (
+                    "en_custodia",
+                    models.BooleanField(
+                        default=True, help_text="Indicador en custodia"
+                    ),
+                ),
+                (
+                    "financiera",
+                    models.BooleanField(default=True, help_text="Indicador financiera"),
+                ),
+                ("valor_contable", models.BigIntegerField(help_text="Valor contable")),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            ("I", "Inversión"),
+                            ("P", "Plazo Fijo"),
+                            ("C", "Cheque Pago Diferido"),
+                        ],
+                        default="I",
+                        editable=False,
+                        help_text="I = Inversión",
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "tipo_especie",
+                    models.CharField(
+                        choices=[
+                            ("TP", "Títulos Públicos"),
+                            ("ON", "Obligaciones Negociables"),
+                            ("FC", "Fondos Comunes de Inversión"),
+                            ("FF", "Fideicomisos Financieros"),
+                            ("AC", "Acciones"),
+                            ("OP", "Otras Inversiones"),
+                        ],
+                        help_text="Tipo de especie (TP, ON, FC, etc.)",
+                        max_length=2,
+                    ),
+                ),
+                (
+                    "codigo_especie",
+                    models.CharField(
+                        help_text="Código SSN de la especie", max_length=20
+                    ),
+                ),
+                (
+                    "cantidad_devengado_especies",
+                    models.DecimalField(
+                        decimal_places=6,
+                        help_text="Cantidad devengada de especies",
+                        max_digits=20,
+                    ),
+                ),
+                (
+                    "cantidad_percibido_especies",
+                    models.DecimalField(
+                        decimal_places=6,
+                        help_text="Cantidad percibida de especies",
+                        max_digits=20,
+                    ),
+                ),
+                (
+                    "prevision_desvalorizacion",
+                    models.DecimalField(
+                        decimal_places=0,
+                        default=0,
+                        help_text="Previsión desvalorización",
+                        max_digits=14,
+                    ),
+                ),
+                (
+                    "fecha_pase_vt",
+                    models.DateField(
+                        blank=True, help_text="Fecha de pase a VT (DDMMYYYY)", null=True
+                    ),
+                ),
+                (
+                    "precio_pase_vt",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        help_text="Precio de pase a VT",
+                        max_digits=12,
+                        null=True,
+                    ),
+                ),
+                (
+                    "valor_financiero",
+                    models.DecimalField(
+                        decimal_places=0,
+                        default=0,
+                        help_text="Valor financiero",
+                        max_digits=14,
+                    ),
+                ),
+                (
+                    "solicitud",
+                    models.ForeignKey(
+                        help_text="Solicitud mensual a la que pertenece este stock",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="stocks_inversion_mensuales",
+                        to="operaciones.baserequestmodel",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Stock Inversión Mensual',
-                'verbose_name_plural': 'Stocks Inversión Mensuales',
-                'ordering': ['-solicitud', 'codigo_especie'],
+                "verbose_name": "Stock Inversión Mensual",
+                "verbose_name_plural": "Stocks Inversión Mensuales",
+                "ordering": ["-solicitud", "codigo_especie"],
             },
         ),
         migrations.CreateModel(
-            name='PlazoFijoStock',
+            name="PlazoFijoStock",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('codigo_afectacion', models.CharField(help_text='Código de afectación', max_length=3)),
-                ('tipo_valuacion', models.CharField(choices=[('T', 'Técnico'), ('V', 'Mercado')], help_text='Tipo de valuación', max_length=1)),
-                ('con_cotizacion', models.BooleanField(default=True, help_text='Indicador de cotización (1: Sí, 0: No)')),
-                ('libre_disponibilidad', models.BooleanField(default=True, help_text='Libre disponibilidad (1: Sí, 0: No)')),
-                ('emisor_grupo_economico', models.BooleanField(default=False, help_text='Emisor pertenece a grupo económico')),
-                ('emisor_art_ret', models.BooleanField(default=False, help_text='Emisor ART/RET')),
-                ('en_custodia', models.BooleanField(default=True, help_text='Indicador en custodia')),
-                ('financiera', models.BooleanField(default=True, help_text='Indicador financiera')),
-                ('valor_contable', models.BigIntegerField(help_text='Valor contable')),
-                ('tipo', models.CharField(choices=[('I', 'Inversión'), ('P', 'Plazo Fijo'), ('C', 'Cheque Pago Diferido')], default='P', editable=False, help_text='P = Plazo Fijo', max_length=1)),
-                ('tipo_pf', models.CharField(help_text='Código de Tipo de Depósito', max_length=3)),
-                ('bic', models.CharField(help_text='Código BIC del banco', max_length=12)),
-                ('cdf', models.CharField(help_text='Certificado del Depósito a Plazo', max_length=20)),
-                ('fecha_constitucion', models.DateField(help_text='Fecha de constitución (DDMMYYYY)')),
-                ('fecha_vencimiento', models.DateField(help_text='Fecha de vencimiento (DDMMYYYY)')),
-                ('moneda', models.CharField(help_text='Código de moneda', max_length=3)),
-                ('valor_nominal_origen', models.DecimalField(decimal_places=0, help_text='Valor nominal en moneda origen', max_digits=10)),
-                ('valor_nominal_nacional', models.DecimalField(decimal_places=0, help_text='Valor nominal en pesos argentinos', max_digits=10)),
-                ('tipo_tasa', models.CharField(help_text='Tipo de tasa (F=Fija, V=Variable)', max_length=1)),
-                ('tasa', models.DecimalField(decimal_places=3, help_text='Tasa aplicada', max_digits=5)),
-                ('titulo_deuda', models.BooleanField(default=False, help_text='Indicador de título de deuda pública')),
-                ('codigo_titulo', models.CharField(blank=True, help_text='Código de título público', max_length=3)),
-                ('solicitud', models.ForeignKey(help_text='Solicitud mensual a la que pertenece este stock', on_delete=django.db.models.deletion.CASCADE, related_name='stocks_plazofijo_mensuales', to='operaciones.baserequestmodel')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "codigo_afectacion",
+                    models.CharField(help_text="Código de afectación", max_length=3),
+                ),
+                (
+                    "tipo_valuacion",
+                    models.CharField(
+                        choices=[("T", "Técnico"), ("V", "Mercado")],
+                        help_text="Tipo de valuación",
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "con_cotizacion",
+                    models.BooleanField(
+                        default=True, help_text="Indicador de cotización (1: Sí, 0: No)"
+                    ),
+                ),
+                (
+                    "libre_disponibilidad",
+                    models.BooleanField(
+                        default=True, help_text="Libre disponibilidad (1: Sí, 0: No)"
+                    ),
+                ),
+                (
+                    "emisor_grupo_economico",
+                    models.BooleanField(
+                        default=False, help_text="Emisor pertenece a grupo económico"
+                    ),
+                ),
+                (
+                    "emisor_art_ret",
+                    models.BooleanField(default=False, help_text="Emisor ART/RET"),
+                ),
+                (
+                    "en_custodia",
+                    models.BooleanField(
+                        default=True, help_text="Indicador en custodia"
+                    ),
+                ),
+                (
+                    "financiera",
+                    models.BooleanField(default=True, help_text="Indicador financiera"),
+                ),
+                ("valor_contable", models.BigIntegerField(help_text="Valor contable")),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            ("I", "Inversión"),
+                            ("P", "Plazo Fijo"),
+                            ("C", "Cheque Pago Diferido"),
+                        ],
+                        default="P",
+                        editable=False,
+                        help_text="P = Plazo Fijo",
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "tipo_pf",
+                    models.CharField(
+                        help_text="Código de Tipo de Depósito", max_length=3
+                    ),
+                ),
+                (
+                    "bic",
+                    models.CharField(help_text="Código BIC del banco", max_length=12),
+                ),
+                (
+                    "cdf",
+                    models.CharField(
+                        help_text="Certificado del Depósito a Plazo", max_length=20
+                    ),
+                ),
+                (
+                    "fecha_constitucion",
+                    models.DateField(help_text="Fecha de constitución (DDMMYYYY)"),
+                ),
+                (
+                    "fecha_vencimiento",
+                    models.DateField(help_text="Fecha de vencimiento (DDMMYYYY)"),
+                ),
+                (
+                    "moneda",
+                    models.CharField(help_text="Código de moneda", max_length=3),
+                ),
+                (
+                    "valor_nominal_origen",
+                    models.DecimalField(
+                        decimal_places=0,
+                        help_text="Valor nominal en moneda origen",
+                        max_digits=10,
+                    ),
+                ),
+                (
+                    "valor_nominal_nacional",
+                    models.DecimalField(
+                        decimal_places=0,
+                        help_text="Valor nominal en pesos argentinos",
+                        max_digits=10,
+                    ),
+                ),
+                (
+                    "tipo_tasa",
+                    models.CharField(
+                        help_text="Tipo de tasa (F=Fija, V=Variable)", max_length=1
+                    ),
+                ),
+                (
+                    "tasa",
+                    models.DecimalField(
+                        decimal_places=3, help_text="Tasa aplicada", max_digits=5
+                    ),
+                ),
+                (
+                    "titulo_deuda",
+                    models.BooleanField(
+                        default=False, help_text="Indicador de título de deuda pública"
+                    ),
+                ),
+                (
+                    "codigo_titulo",
+                    models.CharField(
+                        blank=True, help_text="Código de título público", max_length=3
+                    ),
+                ),
+                (
+                    "solicitud",
+                    models.ForeignKey(
+                        help_text="Solicitud mensual a la que pertenece este stock",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="stocks_plazofijo_mensuales",
+                        to="operaciones.baserequestmodel",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Stock Plazo Fijo Mensual',
-                'verbose_name_plural': 'Stocks Plazo Fijo Mensuales',
-                'ordering': ['-solicitud', 'bic'],
+                "verbose_name": "Stock Plazo Fijo Mensual",
+                "verbose_name_plural": "Stocks Plazo Fijo Mensuales",
+                "ordering": ["-solicitud", "bic"],
             },
         ),
     ]

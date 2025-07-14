@@ -127,8 +127,12 @@ class PlazoFijoStock(BaseMonthlyStock):
     valor_nominal_origen = models.DecimalField(
         max_digits=10, decimal_places=0, help_text="Valor nominal en moneda origen"
     )
-    valor_nominal_nacional = models.DecimalField(
-        max_digits=10, decimal_places=0, help_text="Valor nominal en pesos argentinos"
+    valor_nominal_origen = models.DecimalField(
+        max_digits=10,
+        decimal_places=0,
+        help_text="Valor nominal en moneda origen",
+        blank=True,
+        null=True,
     )
     tipo_tasa = models.CharField(
         max_length=1, help_text="Tipo de tasa (F=Fija, V=Variable)"
