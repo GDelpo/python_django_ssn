@@ -91,6 +91,8 @@ class InversionStock(BaseMonthlyStock):
     prevision_desvalorizacion = models.DecimalField(
         max_digits=14,
         decimal_places=0,
+        blank=True,
+        null=True,
         help_text="Previsión desvalorización",
     )
     fecha_pase_vt = models.DateField(
