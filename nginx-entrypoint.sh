@@ -22,7 +22,7 @@ else
 fi
 
 echo "⚙️  Renderizando configuración Nginx desde template..."
-envsubst < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+envsubst '${SSL_DOMAIN} ${SSL_IP}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
 echo "🚀 Iniciando Nginx..."
 exec nginx -g "daemon off;"
