@@ -1,3 +1,5 @@
+from ..models import TipoEntrega
+
 class OperacionesService:
     """
     Service central para lógica de consulta y agrupación de operaciones.
@@ -8,13 +10,19 @@ class OperacionesService:
         """
         Devuelve TODAS las operaciones asociadas a una solicitud, como una lista única ordenada.
         """
-        compras = base_request.compras.all()
-        ventas = base_request.ventas.all()
-        canjes = base_request.canjes.all()
-        plazos_fijos = base_request.plazos_fijos.all()
-        operaciones = list(compras) + list(ventas) + list(canjes) + list(plazos_fijos)
-        # Ordenar por fecha de movimiento
-        operaciones.sort(key=lambda op: op.fecha_operacion)
+        if base_request.tipo_entrega == TipoEntrega.SEMANAL:
+            compras = base_request.compras.all()
+            ventas = base_request.ventas.all()
+            canjes = base_request.canjes.all()
+            plazos_fijos = base_request.plazos_fijos.all()
+            operaciones = list(compras) + list(ventas) + list(canjes) + list(plazos_fijos)
+            # Ordenar por fecha de movimiento
+            operaciones.sort(key=lambda op: op.fecha_operacion)
+        elif base_request.tipo_entrega == TipoEntrega.MENSUAL:
+            inversiones = base_request.inversiones.all()
+            plazos_fijos = base_request.plazos_fijos.all()
+            cheques_pd = base_request.cheques_pd.all()
+            operaciones = list(inversiones) + list(plazos_fijos) + list(cheques_pd)
         return operaciones
 
     @staticmethod
