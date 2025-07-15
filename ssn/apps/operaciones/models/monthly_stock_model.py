@@ -106,10 +106,11 @@ class InversionStock(BaseMonthlyStock):
         help_text="Precio de pase a VT",
     )
     valor_financiero = models.DecimalField(
-        max_digits=14, decimal_places=0, 
-        blank=True, 
+        max_digits=14,
+        decimal_places=0,
+        blank=True,
         null=True,
-        help_text="Valor financiero"
+        help_text="Valor financiero",
     )
 
     solicitud = models.ForeignKey(
