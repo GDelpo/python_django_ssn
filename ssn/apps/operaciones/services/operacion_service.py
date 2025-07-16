@@ -19,9 +19,9 @@ class OperacionesService:
             # Ordenar por fecha de movimiento
             operaciones.sort(key=lambda op: op.fecha_operacion)
         elif base_request.tipo_entrega == TipoEntrega.MENSUAL:
-            inversiones = base_request.inversiones.all()
-            plazos_fijos = base_request.plazos_fijos.all()
-            cheques_pd = base_request.cheques_pd.all()
+            inversiones = base_request.stocks_inversion_mensuales.all()
+            plazos_fijos = base_request.stocks_plazofijo_mensuales.all()
+            cheques_pd = base_request.stocks_chequespd_mensuales.all()
             operaciones = list(inversiones) + list(plazos_fijos) + list(cheques_pd)
         return operaciones
 
