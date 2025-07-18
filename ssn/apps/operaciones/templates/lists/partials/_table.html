@@ -24,9 +24,11 @@
           <td role="gridcell" class="px-4 py-3 md:table-cell block text-sm text-gray-700 text-center md:text-left" data-label="Tipo de operación">
             <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">Tipo de operación</span>
             <div class="flex items-center justify-center md:justify-start">
-              <h1>o{{p.tipo_operacion}}</h1>
-              <h1>{{op.get_tipo_operacion_display}}</h1>
-              {% include "lists/partials/_tipo_chip.html" with tipo=op.tipo_operacion valor=op.get_tipo_operacion_display show_icon=True %}
+              {% if op.tipo_operacion %}
+                  {% include "lists/partials/_tipo_chip.html" with tipo=op.tipo_operacion valor=op.get_tipo_operacion_display show_icon=True %}
+              {% elif op.tipo_stock %}
+                  {% include "lists/partials/_tipo_chip.html" with tipo=op.tipo_stock valor=op.get_tipo_stock_display show_icon=True %}
+              {% endif %}
             </div>
           </td>
           <td role="gridcell" class="px-4 py-3 md:table-cell block text-sm text-gray-700 whitespace-nowrap text-center md:text-left" data-label="Fecha movimiento">
