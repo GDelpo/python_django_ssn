@@ -10,14 +10,7 @@
 
   <table class="min-w-full table-auto divide-y divide-gray-200 bg-white rounded-lg overflow-hidden shadow-sm block md:table">
     <caption class="sr-only">Listado de Operaciones</caption>
-    <thead role="rowgroup" class="hidden md:table-header-group bg-gradient-to-r from-blue-50 to-white divide-y divide-gray-200">
-      <tr role="row" class="block md:table-row">
-        <th role="columnheader" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider md:table-cell">Tipo de operación</th>
-        <th role="columnheader" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider md:table-cell">Fecha movimiento</th>
-        <th role="columnheader" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider md:table-cell">Especie x Cant.|Cód. CDF</th>
-        <th role="columnheader" class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider md:table-cell">Acciones</th>
-      </tr>
-    </thead>
+    {% include "lists/partials/_header_table.html" with tipo=base_request.tipo_entrega %}
     <tbody role="rowgroup" class="block md:table-row-group divide-y divide-gray-200">
       {% for op in operations %}
         <tr role="row" class="bg-white odd:bg-gray-50 hover:bg-blue-50 block md:table-row border-b md:border-0 transition-colors">
@@ -32,10 +25,14 @@
             </div>
           </td>
           <td role="gridcell" class="px-4 py-3 md:table-cell block text-sm text-gray-700 whitespace-nowrap text-center md:text-left" data-label="Fecha movimiento">
-            <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">Fecha movimiento</span>
+            <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">{% if base_request.tipo_entrega == 'Semanal' %}Fecha movimiento{% elif base_request.tipo_entrega == 'Mensual' %}En Custodia{% endif %}</span>
             <div class="flex items-center justify-center md:justify-start">
+              {% if base_request.tipo_entrega == 'Semanal' %}
               <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
               {{ op.fecha_operacion|date:"d/m/Y" }}
+              {% elif base_request.tipo_entrega == 'Mensual' %}
+              {{op.en_custodia}}
+              {% endif %}              
             </div>
           </td>
           <td role="gridcell" class="px-4 py-3 md:table-cell block text-sm text-gray-700 whitespace-nowrap text-center md:text-left" data-label="Especie x Cant.">
