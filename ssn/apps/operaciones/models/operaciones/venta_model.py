@@ -74,7 +74,7 @@ class VentaOperacion(BaseOperacionModel, DetalleOperacionBase):
             raise ValidationError(errors)
 
     def __str__(self):
-        return f"{self.codigo_especie} x {self.cant_especies}"
+        return f"{self.codigo_especie} x {self.cant_especies:.2f}"
 
     class Meta:
         verbose_name = "Venta"

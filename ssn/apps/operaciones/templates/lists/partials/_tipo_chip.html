@@ -3,9 +3,8 @@
   Recibe: tipo, valor, size (opcional), show_icon (bool)
   - tipo: compra, venta, canje, stock_inversion, stock_plazofijo, etc.
   - valor: display text (opcional, si querés sobreescribir)
-  - size: xs, sm, md (default sm)
 {% endcomment %}
-{% with chip_classes="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2" %}
+{% with chip_classes="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium mr-2" %}
   {% if tipo == 'C' or tipo == 'compra' %}
     <span class="{{ chip_classes }} bg-green-100 text-green-800">
       {% if show_icon %}<i class="fas fa-arrow-right mr-1"></i>{% endif %}

@@ -95,7 +95,7 @@ class HeaderButtonsMixin:
             ),
             "label": "Revisar Solicitud",
             "icon": "fas fa-eye",
-            "color": "warning",
+            "color": "success",
         },
         "send": lambda self: {
             "id": "enviarSolicitud",

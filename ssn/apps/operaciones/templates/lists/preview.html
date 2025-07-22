@@ -1,51 +1,12 @@
 {% extends "lists/partials/_base.html" %}
-{% block title %}Vista Previa de Solicitud{% endblock %}
-
-{% block content %}
-  {% block extra_info %}
-    {% include "partials/_extra_info.html" %}
-  {% endblock %}
-
-  <div class="max-w-3xl mx-auto">
-    {# ======== BLOQUE DE BREADCRUMBS ======== #}
-    {% if breadcrumb_items %}
-      <nav class="mb-4 text-sm text-gray-600" aria-label="Breadcrumb">
-        <ol class="flex flex-wrap items-center space-x-2">
-          {% for label,url in breadcrumb_items %}
-            <li class="flex items-center">
-              {% if url %}
-                <a href="{{ url }}" class="hover:underline">{{ label }}</a>
-              {% else %}
-                <span class="text-gray-500">{{ label }}</span>
-              {% endif %}
-              {% if not forloop.last %}<span class="mx-2">/</span>{% endif %}
-            </li>
-          {% endfor %}
-        </ol>
-      </nav>
-    {% endif %}
-    {# ======== FIN DE BREADCRUMBS ======== #}
-    {% include "componentes/card.html" with title="Vista Previa de Solicitud" header_buttons=header_buttons %}
-
-    {% block card_content %}
-    <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6 overflow-hidden">
-      {% if base_request.send_at %}
-      <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <div class="flex items-center text-blue-700">
-          <i class="fas fa-info-circle mr-2 text-blue-500"></i>
-          <span>Esta solicitud ya ha sido <strong>enviada</strong> ({{ base_request.send_at|date:"d/m/Y H:i" }}). Sólo puedes visualizarla.</span>
-        </div>
-      </div>
-      {% endif %}
-      
+  {% block list_content %}
       <h3 class="text-lg font-bold text-blue-600 truncate mb-6">Indentificador: <span id="uuidSolicitud" class="font-medium text-blue-800 italic cursor-pointer hover:text-blue-600 hover:underline transition duration-200">{{base_request.uuid}}</span></h3>
       <!-- Área para mostrar el JSON formateado, con altura máxima y scroll -->
       <div class="mb-3">
         <pre id="jsonContent" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; max-height: 400px; overflow-y: auto;">
-{{ formatted_json }}
+          {{ formatted_json }}
         </pre>
       </div>
-      
       <!-- Botones para copiar y enviar por mail, en grid con separación -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-3">
         {% include "componentes/button.html" with id="copyButton" href=edit_url icon="fas fa-copy" label="Copiar JSON" color="primary" %}
@@ -55,9 +16,6 @@
         {% include "componentes/link_button.html" with href=excel_link icon="fas fa-file-arrow-down" label="Descargar <strong>.xlsx</strong>" color="success" %}
       </div>
     {% endblock %}
-  </div>
-</div>
-{% endblock %}
 
 {% block extra_js %}
 <script>

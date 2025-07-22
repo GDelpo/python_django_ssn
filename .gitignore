@@ -74,3 +74,4 @@ nginx/default.conf
 
 # Fixtures
 weeks_data_fixture.json
+mensual_data_fixture.json

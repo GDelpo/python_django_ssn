@@ -1,15 +1,11 @@
 {% extends "lists/partials/_base.html" %}
-{% block title %}Detalle de Respuestas{% endblock %}
-
-{% block card_content %}
-  <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6 overflow-hidden">
+{% block list_content %}
     <h3 class="text-lg font-bold text-blue-600 truncate mb-6">
       Solicitud ID:
       <span id="uuidSolicitud" class="font-medium text-blue-800 italic cursor-pointer hover:text-blue-600 hover:underline transition duration-200">
         {{ solicitud.uuid }}
       </span>
     </h3>
-
     {% for r in respuestas %}
       <div class="mb-6">
         <details class="group" {% if forloop.first %}open{% endif %}>
@@ -44,7 +40,6 @@
     {% empty %}
       <div class="text-gray-500 italic">No hay respuestas registradas para esta solicitud.</div>
     {% endfor %}
-  </div>
 {% endblock %}
 
 {% block extra_js %}

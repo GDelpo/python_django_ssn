@@ -1,6 +1,6 @@
 {% extends "forms/partials/_base.html" %}
 
-{% block title %}Tipo de Operación{% endblock %}
+{% block title %}{{title}}{% endblock %}
 
 {% block form_fields %}
   <div class="grid grid-cols-1 gap-6">
@@ -10,23 +10,24 @@
   </div>
 {% endblock %}
 {% block submit_button %}
-  {% include "componentes/button.html" with label=button_text color="primary" %}
+  {% include "componentes/button.html" with label=button_text icon="fas fa-plus" color="primary" %}
 {% endblock %}
 {% block extra_buttons %}
   {% for key, value in extra_info %}
     {% if key == "Operaciones" %}
       {# 1) Si ya hay operaciones, muestro “Ver Operaciones” #}
-      {% if value|length > 0 %}
+      {% if value > 0 %}
         {% url 'operaciones:lista_operaciones' uuid=base_request.uuid as lista_url %}
         {% include "componentes/link_button.html" with href=lista_url label="Ver Operaciones" icon="fas fa-list" color="warning" %}
       {# 2) Si NO hay operaciones y es Semanal, muestro “Enviar solicitud vacía” #}
       {% elif base_request.tipo_entrega == "Semanal" %}
         {% url 'operaciones:enviar_operaciones' uuid=base_request.uuid as empty_url %}
-        {% include "componentes/link_button.html" with href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud sin operaciones" icon="fas fa-paper-plane" color="danger" %}
+        {% include "componentes/link_button.html" with href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud sin operaciones" icon="fas fa-paper-plane" color="warning" %}
       {% endif %}
     {% endif %}
   {% endfor %}
 {% endblock %}
+{% if base_request.tipo_entrega == "Semanal" %}
 {% block extra_js %}
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -34,5 +35,5 @@
     });
   </script>
 {% endblock %}
-
+{% endif %}
 

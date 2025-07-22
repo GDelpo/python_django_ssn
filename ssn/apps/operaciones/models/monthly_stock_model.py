@@ -126,7 +126,7 @@ class InversionStock(BaseMonthlyStock):
         ordering = ["-solicitud", "codigo_especie"]
 
     def __str__(self):
-        return f"Inversión {self.codigo_especie} @ {self.solicitud.cronograma}"
+        return f"{self.tipo_especie} - {self.codigo_especie}"
 
 
 class PlazoFijoStock(BaseMonthlyStockPlazoFijoChequePagoDiferido):
@@ -177,7 +177,7 @@ class PlazoFijoStock(BaseMonthlyStockPlazoFijoChequePagoDiferido):
         ordering = ["-solicitud", "bic"]
 
     def __str__(self):
-        return f"Plazo Fijo {self.bic} @ {self.solicitud.cronograma}"
+        return f"{self.bic} @ {self.solicitud.cronograma}"
 
 
 class ChequePagoDiferidoStock(BaseMonthlyStockPlazoFijoChequePagoDiferido):

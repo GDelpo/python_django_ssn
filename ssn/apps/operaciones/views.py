@@ -145,10 +145,10 @@ class OperacionListView(
     ListView,
 ):
     # --- Atributos configurables ---
-    template_name = "lists/lista.html"
+    template_name = "lists/lista_op.html"
     context_object_name = "operations"
     paginate_by = 10
-    title = "Tabla de Operaciones"
+    title = "Listado de Operaciones"
     breadcrumbs = [
         ("Inicio", "theme:index"),
         ("Solicitudes", "operaciones:lista_solicitudes"),
@@ -180,7 +180,7 @@ class TipoOperacionSelectView(
     # --- Atributos configurables ---
     form_class = TipoOperacionForm
     template_name = "forms/seleccion_tipo_operacion.html"
-    title = "Selecciona el Tipo de Operación"
+    title = "Tipo de Operación"
     button_text = "Crear Operación"
     header_buttons_config = ["back_base"]
     breadcrumbs = [
@@ -417,7 +417,7 @@ class OperacionPreviewView(
 ):
     # --- Atributos configurables ---
     template_name = "lists/preview.html"
-    title = "Vista Previa"
+    title = "Vista Previa de Solicitud"
 
     # --- Métodos ---
     def get_title(self):

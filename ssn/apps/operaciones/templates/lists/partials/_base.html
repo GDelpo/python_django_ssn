@@ -26,40 +26,23 @@
     {% endif %}
     {# ======== FIN DE BREADCRUMBS ======== #}
     {% include "componentes/card.html" with title=title header_buttons=header_buttons %}
-
-    {% block card_content %}
-      {% if operations or base_request.send_at %}
-        <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6">
-          {% include "lists/partials/_table.html" %}
+    {% if base_request.send_at %}
+      <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-center text-blue-700">
+          <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+          <span>Esta solicitud ya ha sido <strong>enviada</strong> ({{ base_request.send_at|date:"d/m/Y H:i" }}). Sólo puedes visualizarla.</span>
         </div>
-        {% include "lists/partials/_pagination.html" with page_obj=page_obj %}
-      {% else %}
-        <div class="flex flex-col items-center justify-center py-12 text-center">
-          <i class="fas fa-file-alt text-gray-300 text-5xl mb-4"></i>
-          <p class="text-gray-500 mb-4">No se han registrado operaciones.</p>
-          <p class="text-gray-500 my-4">Para empezar, crea una nueva operación.</p>
-          {% url 'operaciones:seleccion_tipo_operacion' uuid=base_request.uuid as create_url %}
-          {% include "componentes/link_button.html" with href=create_url label="Crear nueva operación" icon="fas fa-plus" color="primary" %}
-          {% if base_request.tipo_entrega == "Semanal" %}
-          <p class="text-gray-500 my-4">Si no hubo movimientos, podés enviar la solicitud sin operaciones.</p>
-            {% url 'operaciones:enviar_operaciones' uuid=base_request.uuid as empty_url %}
-            {% include "componentes/link_button.html" with href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud sin operaciones" icon="fas fa-paper-plane" color="danger" %}
-          {% endif %}
-          </div>
-      {% endif %}
-    {% endblock %}
-  </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    initConfirmButton(
-      "#sendEmptyBtn",
-      "¿Estás seguro de enviar la solicitud vacía?"
-    );
-  });
-</script>
+      </div>
+    {% endif %}
+    <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6 overflow-hidden">
+      <div class="overflow-x-auto">
+        {% block list_content %}{% endblock %}
+      </div>
+    </div>
+      {% if page_obj %}
+        {% include "lists/partials/_pagination.html" %}
+      {% endif %}    
+  </div>  
 {% endblock %}
 
 

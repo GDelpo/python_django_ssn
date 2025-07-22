@@ -38,13 +38,20 @@ class OperacionesService:
         }
 
     @staticmethod
+    def get_total_operaciones(base_request):
+        """
+        Devuelve el total sumando los valores del dict de counts.
+        """
+        counts = OperacionesService.get_count_by_tipo(base_request)
+        return sum(counts.values())
+    
+    @staticmethod
     def get_extra_info(base_request):
         """
         Devuelve información extra para mostrar en los templates.
         """
-        operaciones = OperacionesService.get_all_operaciones(base_request)
         return [
             ("Tipo de Entrega", base_request.tipo_entrega or "—"),
             ("Cronograma", base_request.cronograma or "—"),
-            ("Operaciones", operaciones),
+            ("Operaciones", OperacionesService.get_total_operaciones(base_request)),
         ]
