@@ -4,10 +4,6 @@ set -e
 
 echo "ℹ️ Iniciando aplicación..."
 
-# Configurar entorno
-export PYTHONPATH="/app/ssn"
-export DJANGO_SETTINGS_MODULE="config.settings"
-
 # Esperar por la base de datos
 echo "⏳ Esperando a la base de datos..."
 host="${POSTGRES_HOST:-db}"
