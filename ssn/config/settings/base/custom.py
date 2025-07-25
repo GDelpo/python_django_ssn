@@ -23,3 +23,10 @@ TAILWIND_APP_NAME = "theme"
 INTERNAL_IPS = ["127.0.0.1"]
 NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd" if os.name == "nt" else "/usr/bin/npm"
 REST_FRAMEWORK = {"DEFAULT_THROTTLE_RATES": {"anon": "100/day", "user": "1000/day"}}
+
+# --- Configuración de la Compañía ---
+COMPANY_NAME = get_build_config("COMPANY_NAME", default="Nombre Compañía")
+COMPANY_WEBSITE = get_build_config("COMPANY_WEBSITE", default="https://www.compania.com")
+COMPANY_LOGO_URL = get_build_config(
+    "COMPANY_LOGO_URL", default="https://www.compania.com/logo.png"
+)

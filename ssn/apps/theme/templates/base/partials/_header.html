@@ -1,0 +1,28 @@
+<header class="bg-white border-b border-gray-200 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16 items-center">
+      <div class="flex items-center">
+        <a href="/" class="flex items-center">
+          {% comment %} Se puede subir a static/img y referenciarlo. Pero siempre es mejor referenciar a un externo{% endcomment %}
+          <img src="{{ COMPANY_LOGO_URL }}" alt="{{ COMPANY_NAME }}" class="h-12 w-auto mr-3">
+        </a>
+      </div>
+
+      <nav class="hidden sm:flex space-x-4">
+        {% include "base/partials/_navigation.html" with mobile=False %}
+      </nav>
+
+      <div class="sm:hidden">
+        <button id="mobile-menu-button" aria-label="Abrir menú" class="p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-gray-100">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sm:hidden hidden" id="mobile-menu">
+    <div class="px-2 pt-2 pb-3 space-y-1">
+      {% include "base/partials/_navigation.html" with mobile=True %}
+    </div>
+  </nav>
+</header>

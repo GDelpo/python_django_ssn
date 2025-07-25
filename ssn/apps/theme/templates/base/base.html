@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  {% include "base/partials/_head.html" %}
+</head>
+
+<body class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col">
+
+  {% include "base/partials/_header.html" %}
+
+  {% block full_width_content %}{% endblock %}
+
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include "base/partials/_footer.html" %}
+
+  {% include "base/partials/_scripts.html" %}
+
+</body>
+
+</html>

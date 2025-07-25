@@ -1,10 +1,8 @@
-import os
-import sys
-
 from django.apps import AppConfig
 from django.conf import settings
+import logging
 
-from .clients import SsnService
+logger = logging.getLogger("ssn_client")
 
 
 class SsnClientConfig(AppConfig):
@@ -13,28 +11,23 @@ class SsnClientConfig(AppConfig):
     ssn_client = None
 
     def ready(self):
-        # Verificar si estamos en un comando de manejo no relacionado con el cliente
-        management_commands = [
-            "tailwind",
-            "collectstatic",
-            "makemigrations",
-            "migrate",
-            "shell",
-        ]
-        is_management_command = any(
-            cmd in " ".join(sys.argv) for cmd in management_commands
+        has_credentials = (
+            hasattr(settings, 'SSN_API_USERNAME') and settings.SSN_API_USERNAME and
+            hasattr(settings, 'SSN_API_PASSWORD') and settings.SSN_API_PASSWORD
         )
 
-        # Verificar si estamos en fase de construcción con SECRET_KEY dummy
-        is_build_env = os.environ.get("SECRET_KEY") in ["dummy", "nothing"]
+        if not has_credentials:
+            logger.info("No se inicializa el cliente SSN: faltan credenciales o estamos en un entorno de build/migración.")
+            return
 
-        # Si estamos ejecutando ciertos comandos o en fase de construcción,
-        # no inicializar el cliente
-        if is_management_command or is_build_env:
+        # Si ya está inicializado, no hacer nada.
+        if SsnClientConfig.ssn_client:
             return
 
         try:
-            # Intentar inicializar el cliente normalmente
+            # Importamos el servicio para evitar importaciones circulares
+            from .clients import SsnService
+
             SsnClientConfig.ssn_client = SsnService(
                 username=settings.SSN_API_USERNAME,
                 password=settings.SSN_API_PASSWORD,
@@ -43,9 +36,6 @@ class SsnClientConfig(AppConfig):
                 max_retries=settings.SSN_API_MAX_RETRIES,
                 retry_delay=settings.SSN_API_RETRY_DELAY,
             )
+            logger.info("Cliente SSN inicializado exitosamente.")
         except Exception as e:
-            # Si hay un error, registrar el error
-            import logging
-
-            logger = logging.getLogger("ssn_client")
-            logger.warning(f"No se pudo inicializar el cliente SSN: {str(e)}")
+            logger.warning(f"No se pudo inicializar el cliente SSN: {e}")
