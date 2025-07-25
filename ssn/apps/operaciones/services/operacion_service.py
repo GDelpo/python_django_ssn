@@ -1,5 +1,6 @@
 from ..models import TipoEntrega
 
+
 class OperacionesService:
     """
     Service central para lógica de consulta y agrupación de operaciones.
@@ -15,7 +16,9 @@ class OperacionesService:
             ventas = base_request.ventas.all()
             canjes = base_request.canjes.all()
             plazos_fijos = base_request.plazos_fijos.all()
-            operaciones = list(compras) + list(ventas) + list(canjes) + list(plazos_fijos)
+            operaciones = (
+                list(compras) + list(ventas) + list(canjes) + list(plazos_fijos)
+            )
             # Ordenar por fecha de movimiento
             operaciones.sort(key=lambda op: op.fecha_operacion)
         elif base_request.tipo_entrega == TipoEntrega.MENSUAL:
@@ -44,7 +47,7 @@ class OperacionesService:
         """
         counts = OperacionesService.get_count_by_tipo(base_request)
         return sum(counts.values())
-    
+
     @staticmethod
     def get_extra_info(base_request):
         """

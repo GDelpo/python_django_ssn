@@ -1,5 +1,6 @@
-{% extends "lists/partials/_base.html" %}
-  {% block list_content %}
+{% extends "partials/_base_layout.html" %}
+{% block main_content_operaciones %}
+  <div class="overflow-x-auto">
       <h3 class="text-lg font-bold text-blue-600 truncate mb-6">Indentificador: <span id="uuidSolicitud" class="font-medium text-blue-800 italic cursor-pointer hover:text-blue-600 hover:underline transition duration-200">{{base_request.uuid}}</span></h3>
       <!-- Área para mostrar el JSON formateado, con altura máxima y scroll -->
       <div class="mb-3">
@@ -15,6 +16,7 @@
       <div>
         {% include "componentes/link_button.html" with href=excel_link icon="fas fa-file-arrow-down" label="Descargar <strong>.xlsx</strong>" color="success" %}
       </div>
+    </div>
     {% endblock %}
 
 {% block extra_js %}

@@ -1,7 +1,4 @@
-{% extends "forms/partials/_base.html" %}
-
-{% block title %}Formulario de Solicitud{% endblock %}
-
+{% extends "forms/partials/_base_form.html" %}
 {% block extra_form_content %}
   <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6 mb-6 overflow-hidden">
     <details class="group">
@@ -52,6 +49,7 @@
 {% block submit_button %}
   {% include "componentes/button.html" with icon="fas fa-plus" label=button_text color="primary" %}
 {% endblock %}
+
 {% block extra_js %}
   <script>
     document.addEventListener('DOMContentLoaded', function () {

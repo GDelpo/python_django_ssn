@@ -19,7 +19,6 @@ app_name = "operaciones"
 urlpatterns = [
     # Inicio de solicitud base: aquí se crea la solicitud y se genera el UUID
     path("solicitud/", SolicitudBaseCreateView.as_view(), name="solicitud_base"),
-
     # Selección del tipo de operación (se pasa el uuid de la solicitud)
     path(
         "<uuid:uuid>/nueva/",

@@ -1,0 +1,13 @@
+{% extends "partials/_base_layout.html" %}
+
+{% block main_content_operaciones %}
+  <div class="overflow-x-auto">
+    {% block list_content %}{% endblock %}
+  </div>
+{% endblock %}
+
+{% block after_main_content_operaciones %}
+  {% if page_obj %}
+    {% include "lists/partials/_pagination.html" %}
+  {% endif %}
+{% endblock %}

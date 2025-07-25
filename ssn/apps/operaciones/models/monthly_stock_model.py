@@ -5,7 +5,7 @@ Modelo único para stocks mensuales (Inversión, Plazo Fijo y Cheque Pago Diferi
 from django.db import models
 
 from .base_model import BaseRequestModel
-from .choices import TipoEspecie, TipoValuacion, TipoTasa
+from .choices import TipoEspecie, TipoTasa, TipoValuacion
 
 
 class TipoStock(models.TextChoices):

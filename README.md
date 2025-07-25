@@ -88,7 +88,7 @@ venv\Scripts\activate     # En Windows
 3. **Instalar dependencias**
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt # Tener cuidado en que entorno lo instalas, porque en windows no usa python-magic, sino que hay que cambiarlo por python-magic-bin
 ```
 
 4. **Configurar variables de entorno**

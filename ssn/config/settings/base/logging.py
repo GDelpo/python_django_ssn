@@ -25,11 +25,10 @@ def get_logging_config(debug_mode, logs_dir, apps=None):
 
     # Función para crear configuración de archivo de log
     def create_file_handler(name, level=None):
-        # Para desarrollo usamos FileHandler simple
         if debug_mode:
             return {
                 "level": level or log_level,
-                "class": "logging.FileHandler",  # Cambio a FileHandler para desarrollo
+                "class": "logging.FileHandler",
                 "filename": logs_dir / f"{name}.log",
                 "formatter": "verbose",
             }
