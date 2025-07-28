@@ -31,6 +31,7 @@ def get_logging_config(debug_mode, logs_dir, apps=None):
                 "class": "logging.FileHandler",
                 "filename": logs_dir / f"{name}.log",
                 "formatter": "verbose",
+                "encoding": "utf-8",
             }
         else:
             # En producción usamos RotatingFileHandler
@@ -43,6 +44,7 @@ def get_logging_config(debug_mode, logs_dir, apps=None):
                 "maxBytes": log_max_size,
                 "backupCount": log_backup_count,
                 "formatter": "verbose",
+                "encoding": "utf-8",
             }
 
     # Configuración base
@@ -81,6 +83,10 @@ def get_logging_config(debug_mode, logs_dir, apps=None):
                 "handlers": ["file_errors"],
                 "level": "ERROR",
                 "propagate": False,
+            },
+            "root": {
+            "handlers": ["console", "file_general"],
+            "level": "WARNING",
             },
         },
     }

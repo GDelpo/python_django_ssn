@@ -18,6 +18,9 @@ server {
 server {
     listen 443 ssl;
     server_name ${SSL_DOMAIN} ${SSL_IP};
+    
+    # Tamaño de subida de archivos
+    client_max_body_size 20M;
 
     # Certificados
     ssl_certificate /etc/letsencrypt/live/${SSL_DOMAIN}/fullchain.pem;
