@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 from decouple import config
 
-# ¡IMPORTANTE! La ruta se ajusta por estar dos niveles más adentro.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 # Añadir directorio de apps al path

@@ -1,9 +1,8 @@
-# ssn/config/settings/dev.py
 from .base import *
 from decouple import config
 
 # --- SOBREESCRIBIR PARA DESARROLLO ---
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key-para-desarrollo")
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "web"]
 
