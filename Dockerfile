@@ -43,7 +43,7 @@ ARG GID=1000
 RUN groupadd -g ${GID} -o python && \
     useradd --create-home -u ${UID} -g ${GID} -s /bin/bash python && \
     apt-get update && \
-    apt-get install -y --no-install-recommends libpq5 netcat-openbsd postgresql-client libmagic1 && \
+    apt-get install -y --no-install-recommends curl libpq5 netcat-openbsd postgresql-client libmagic1 && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /app/static /app/ssn/media/previews /app/ssn/media/comprobantes /app/ssn/logs && \
     chown -R python:python /app
