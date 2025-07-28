@@ -17,6 +17,9 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
+# Usar una variable de entorno para evitar problemas con la construcción
+COPY .env.build /build/.env
+
 # Copiar el código de la aplicación y compilar assets
 COPY ./ssn /build/ssn
 WORKDIR /build/ssn
