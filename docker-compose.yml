@@ -8,8 +8,8 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      - ./ssn/media:/app/ssn/media
-      - ./ssn/logs:/app/ssn/logs
+      - media_volume:/app/ssn/media
+      - logs_volume:/app/ssn/logs
       - static_volume:/app/static
     depends_on:
       - db
@@ -53,8 +53,7 @@ services:
       - "${NGINX_HOST}:${NGINX_PORT_HTTP}:${NGINX_PORT_HTTP}"
       - "${NGINX_HOST}:${NGINX_PORT_HTTPS}:${NGINX_PORT_HTTPS}"
     volumes:
-      - static_volume:/app/static:ro
-      - ./ssn/media:/app/media:ro
+      - media_volume:/app/ssn/media:ro
       - certbot_certs:/etc/letsencrypt
       - certbot_www:/var/www/certbot
     depends_on:
@@ -77,8 +76,10 @@ services:
 volumes:
   postgres_data:
   static_volume:
-  certbot_certs:  # Volumen para los certificados
-  certbot_www:    # Volumen para el desafío de verificación
+  certbot_certs:
+  certbot_www:
+  media_volume:   
+  logs_volume:   
 
 networks:
   app_network:
