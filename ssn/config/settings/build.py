@@ -1,7 +1,8 @@
-# Importa toda la configuración base que ya tienes
 from .base import *
 
-# Sobrescribe la configuración de la base de datos SOLO para este entorno
+# --- Sobrescribir para el entorno de BUILD ---
+
+# 1. Base de datos SQLite
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -9,10 +10,16 @@ DATABASES = {
     }
 }
 
-# Define un SECRET_KEY temporal para el build
+# 2. Clave secreta temporal
 SECRET_KEY = "dummy_secret_for_build_purposes_only"
 
-# Desactiva configuraciones de seguridad que no aplican al build
+# 3. Relajar seguridad
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+# 4. Definir valores "dummy" para las variables de `custom.py` que no tienen default
+SSN_API_USERNAME = "build_user"
+SSN_API_PASSWORD = "build_pass"
+SSN_API_CIA = "build_cia"
+SSN_API_BASE_URL = "https://build-example.com"
