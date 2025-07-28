@@ -57,6 +57,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Copiar artefactos desde la etapa 'builder' y el código fuente
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder --chown=python:python /build/ssn/static /app/static
 COPY --chown=python:python ./ssn /app/ssn
 COPY --chown=python:python entrypoint.sh /entrypoint.sh
