@@ -1,8 +1,9 @@
+from decouple import Csv, config
+
 from .base import *
-from decouple import config, Csv
 
 # --- CONFIGURACIÓN DE PRODUCCIÓN ---
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 SECRET_KEY = config("SECRET_KEY")
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 

@@ -21,6 +21,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY ./ssn /build/ssn
 WORKDIR /build/ssn
 
+ENV DJANGO_SETTINGS_MODULE=config.settings.build
+
 RUN python manage.py tailwind install --no-input && \
     python manage.py tailwind build --no-input && \
     python manage.py collectstatic --noinput --clear
@@ -48,7 +50,6 @@ WORKDIR /app
 # Variables de entorno para la aplicación
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DJANGO_SETTINGS_MODULE=config.settings \
     PYTHONPATH=/app/ssn
 
 # Copiar artefactos desde la etapa 'builder' y el código fuente

@@ -1,6 +1,7 @@
+import logging
+
 from django.apps import AppConfig
 from django.conf import settings
-import logging
 
 logger = logging.getLogger("ssn_client")
 
@@ -12,12 +13,16 @@ class SsnClientConfig(AppConfig):
 
     def ready(self):
         has_credentials = (
-            hasattr(settings, 'SSN_API_USERNAME') and settings.SSN_API_USERNAME and
-            hasattr(settings, 'SSN_API_PASSWORD') and settings.SSN_API_PASSWORD
+            hasattr(settings, "SSN_API_USERNAME")
+            and settings.SSN_API_USERNAME
+            and hasattr(settings, "SSN_API_PASSWORD")
+            and settings.SSN_API_PASSWORD
         )
 
         if not has_credentials:
-            logger.info("No se inicializa el cliente SSN: faltan credenciales o estamos en un entorno de build/migración.")
+            logger.info(
+                "No se inicializa el cliente SSN: faltan credenciales o estamos en un entorno de build/migración."
+            )
             return
 
         # Si ya está inicializado, no hacer nada.

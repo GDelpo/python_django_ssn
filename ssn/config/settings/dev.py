@@ -1,10 +1,19 @@
-from .base import *
 from decouple import config
 
+from .base import *
+
 # --- SOBREESCRIBIR PARA DESARROLLO ---
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key-para-desarrollo")
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "web"]
+
+# --- Database ---
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db_dev.sqlite3",
+    }
+}
 
 # Relajar seguridad para desarrollo
 CSRF_COOKIE_SECURE = False

@@ -85,8 +85,8 @@ def get_logging_config(debug_mode, logs_dir, apps=None):
                 "propagate": False,
             },
             "root": {
-            "handlers": ["console", "file_general"],
-            "level": "WARNING",
+                "handlers": ["console", "file_general"],
+                "level": "WARNING",
             },
         },
     }

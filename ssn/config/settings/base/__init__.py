@@ -1,10 +1,10 @@
 # ssn/config/settings/base/__init__.py
-from .paths import *
 from .apps import *
-from .database import *
-from .security import *
 from .custom import *
+from .database import *
 from .logging import get_logging_config
+from .paths import *
+from .security import *
 
 # Configuraciones Django que dependen de las anteriores
 ROOT_URLCONF = "config.urls"

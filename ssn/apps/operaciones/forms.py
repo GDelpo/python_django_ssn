@@ -1,7 +1,8 @@
 import datetime
 import logging
-from django.conf import settings
+
 from django import forms
+from django.conf import settings
 
 from .helpers import (
     CLASS_SELECT,
@@ -67,7 +68,9 @@ class BaseRequestForm(forms.ModelForm):
         # Configurar campos específicos
         if "codigo_compania" in self.fields:
             disable_field(self.fields["codigo_compania"], settings.SSN_API_CIA)
-            logger.debug(f"Campo 'codigo_compania' deshabilitado y establecido a '{settings.SSN_API_CIA}'")
+            logger.debug(
+                f"Campo 'codigo_compania' deshabilitado y establecido a '{settings.SSN_API_CIA}'"
+            )
 
         # Establecer valores iniciales para cronograma
         week_choices = self.fields["cronograma_semanal"].choices
