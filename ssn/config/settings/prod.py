@@ -8,8 +8,8 @@ SECRET_KEY = config("SECRET_KEY")
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
 CSRF_TRUSTED_ORIGINS = [
-    f"https://{config('SSL_DOMAIN')}",
-    f"https://{config('SSL_IP')}"
+    f"https://{config('SSL_DOMAIN')}:{config('NGINX_PORT_HTTPS')}",
+    f"https://{config('SSL_IP')}:{config('NGINX_PORT_HTTPS')}"
 ]
 
 # Cargar configuración de Logging para producción
