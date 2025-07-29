@@ -53,6 +53,7 @@ services:
       - "${NGINX_HOST}:${NGINX_PORT_HTTP}:${NGINX_PORT_HTTP}"
       - "${NGINX_HOST}:${NGINX_PORT_HTTPS}:${NGINX_PORT_HTTPS}"
     volumes:
+      - static_volume:/app/static:ro
       - media_volume:/app/ssn/media:ro
       - certbot_certs:/etc/letsencrypt
       - certbot_www:/var/www/certbot
