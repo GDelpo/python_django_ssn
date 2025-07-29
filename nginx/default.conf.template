@@ -1,6 +1,6 @@
 # HTTP
 server {
-    listen 80;
+    listen ${NGINX_PORT_HTTP};
     server_name ${SSL_DOMAIN} ${SSL_IP};
 
     # ACME challenge para Certbot
@@ -16,7 +16,7 @@ server {
 
 # HTTPS
 server {
-    listen 443 ssl;
+    listen ${NGINX_PORT_HTTPS} ssl;
     server_name ${SSL_DOMAIN} ${SSL_IP};
     
     # Tamaño de subida de archivos
