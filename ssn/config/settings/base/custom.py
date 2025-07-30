@@ -1,5 +1,6 @@
-from decouple import config
 import os
+
+from decouple import config
 
 # --- SSN Client Configuration ---
 # Usamos decouple directamente, sin parámetros inventados.
@@ -24,4 +25,6 @@ REST_FRAMEWORK = {"DEFAULT_THROTTLE_RATES": {"anon": "100/day", "user": "1000/da
 # --- Configuración de la Compañía ---
 COMPANY_NAME = config("COMPANY_NAME", default="Nombre Compañía")
 COMPANY_WEBSITE = config("COMPANY_WEBSITE", default="https://www.compania.com")
-COMPANY_LOGO_URL = config("COMPANY_LOGO_URL", default="https://www.compania.com/logo.png")
+COMPANY_LOGO_URL = config(
+    "COMPANY_LOGO_URL", default="https://www.compania.com/logo.png"
+)

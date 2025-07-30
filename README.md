@@ -44,20 +44,9 @@ cd python_django_ssn
 ```bash
 # Configurar variables de entorno
 cp .env-example .env # Editar .env con tus valores
-
-# Configurar Nginx
-cp nginx/default.conf-example nginx/default.conf # Editar default.conf con tu dominio e IP que agregamos en el .env
 ```
 
-3. **Preparar carpetas de media**
-
-```bash
-./prepare_media.sh
-```
-
-**‼ Es importante ejecutarlo al menos una vez antes del primer `docker compose up`.**
-
-4. **Construir e iniciar con Docker Compose**
+3. **Construir e iniciar con Docker Compose**
 
 ```bash
 docker compose build --no-cache && docker compose up -d
@@ -65,8 +54,7 @@ docker compose build --no-cache && docker compose up -d
 
 4. **Acceder a la aplicación**
 
-La aplicación estará disponible en http://localhost:8888 (o el puerto que hayas configurado en NGINX_PORT).  
-Con SSL configurado, también estará en https://tu-dominio.com
+La aplicación estará disponible en https://'SSL_DOMAIN':'NGINX_PORT_HTTPS'" o "https://'SSL_IP':'NGINX_PORT_HTTPS'". Valores que debes configurar en tu archivo `.env`. Entonces, asegúrate de que el puerto NGINX esté libre y que el dominio o IP estén correctamente configurados.
 
 ### Instalación local (desarrollo)
 
@@ -88,8 +76,11 @@ venv\Scripts\activate     # En Windows
 3. **Instalar dependencias**
 
 ```bash
-pip install -r requirements.txt # Tener cuidado en que entorno lo instalas, porque en windows no usa python-magic, sino que hay que cambiarlo por python-magic-bin
+pip install -r requirements.txt
 ```
+
+> [!TIP]
+> Si estás en Windows y encuentras un error con python-magic, es posible que necesites reemplazarlo por python-magic-bin en tu archivo requirements.txt o instalarlo manualmente: pip install python-magic-bin.
 
 4. **Configurar variables de entorno**
 
@@ -123,31 +114,32 @@ python manage.py tailwind start  # Para desarrollo continuo, abrir en otra conso
 python manage.py runserver
 ```
 
+> [!IMPORTANT] 
+> Tenemos `DJANGO_SETTINGS_MODULE=config.settings.dev` que es el entorno de desarrollo, trae configuraciones de depuración y desarrollo, además de que no se usa la base de datos de producción, sino una SQLite en el directorio `ssn/`.
+
 ## 🏗️ Estructura del Proyecto
 
 ```
 .
-├── .env-example             # Plantilla para variables de entorno
-├── .env                     # Variables de entorno (no incluido en Git)
-├── Dockerfile               # Configuración para Docker
-├── Dockerfile.nginx         # Configuración específica para Nginx
-├── docker-compose.yml       # Configuración de servicios
-├── entrypoint.sh            # Script de inicio para el contenedor web
-├── nginx/                   # Configuración de Nginx
-│   ├── default.conf-example # Plantilla de configuración de Nginx
-│   └── default.conf         # Configuración de Nginx (no incluido en Git)
-├── nginx-entrypoint.sh      # Script de inicio para Nginx con certificados
-├── prepare_media.sh         # Crea carpetas necesarias con permisos
-├── requirements.txt         # Dependencias de Python
-└── ssn/                     # Código principal de la aplicación
+├── .env-example              # Plantilla para variables de entorno
+├── .env                      # Variables de entorno (no incluido en Git)
+├── Dockerfile                # Configuración para Docker
+├── Dockerfile.nginx          # Configuración específica para Nginx
+├── docker-compose.yml        # Configuración de servicios
+├── entrypoint.sh             # Script de inicio para el contenedor web
+├── nginx/                    # Configuración de Nginx
+│   ├── default.conf.template # Plantilla de configuración de Nginx
+├── nginx-entrypoint.sh       # Script de inicio para Nginx con certificados
+├── requirements.txt          # Dependencias de Python
+└── ssn/                      # Código principal de la aplicación
     ├── manage.py
-    ├── apps/                # Aplicaciones de Django
-    │   ├── operaciones/     # App principal de operaciones
-    │   ├── ssn_client/      # Cliente para API de SSN
-    │   └── theme/           # Configuración de Tailwind CSS
-    ├── logs/                # Directorio para logs
-    ├── media/               # Archivos subidos por usuarios
-    └── ssn/                 # Configuración del proyecto Django
+    ├── apps/                 # Aplicaciones de Django
+    │   ├── operaciones/      # App principal de operaciones
+    │   ├── ssn_client/       # Cliente para API de SSN
+    │   └── theme/            # Configuración de Tailwind CSS y Templates base
+    ├── logs/                 # Directorio para logs
+    ├── media/                # Archivos subidos por usuarios
+    └── config/               # Configuración del proyecto Django
 ```
 
 ## 🔧 Uso
@@ -161,21 +153,28 @@ python manage.py runserver
 
 Las principales variables de entorno que debes configurar:
 
-| Variable | Descripción |
-|----------|-------------|
-| SECRET_KEY | Clave secreta para Django |
-| DEBUG | Modo de depuración (True/False) |
-| ALLOWED_HOSTS | Hosts permitidos |
-| POSTGRES_DB | Nombre de la base de datos |
-| POSTGRES_USER | Usuario de PostgreSQL |
-| POSTGRES_PASSWORD | Contraseña de PostgreSQL |
-| SSN_API_USERNAME | Usuario para la API de SSN |
-| SSN_API_PASSWORD | Contraseña para la API de SSN |
-| SSN_API_CIA | Código de compañía para SSN |
-| SSN_API_BASE_URL | URL base de la API de SSN |
-| SSL_DOMAIN | Dominio para certificados SSL |
-| SSL_IP | Dirección IP del servidor |
-| NGINX_PORT | Puerto para Nginx (por defecto 8888) |
+| Variable | Descripción | Ejemplo / Notas |
+|----------|-------------|-----------------|
+| `DJANGO_SETTINGS_MODULE` | Define el módulo de configuración de Django a utilizar. | `config.settings.prod` (producción) o `config.settings.dev` (desarrollo) |
+| `DEBUG` | Activa o desactiva el modo de depuración de Django. En producción, debe ser `False`. | `True` o `False` |
+| `SECRET_KEY` | **Clave secreta única y segura para tu instalación de Django.** ¡Absolutamente crítica para la seguridad! | Genera una cadena aleatoria compleja. |
+| `ALLOWED_HOSTS` | Lista de hosts/dominios permitidos para servir la aplicación. Múltiples valores se separan con comas. | `"localhost,inversiones.test.nobleseguros.com,192.168.190.77"` |
+| `POSTGRES_DB` | Nombre de la base de datos PostgreSQL a la que la aplicación se conectará. | `ssn_db` |
+| `POSTGRES_USER` | Nombre de usuario para la conexión a la base de datos PostgreSQL. | `ssn_user` |
+| `POSTGRES_PASSWORD` | **Contraseña** del usuario de PostgreSQL. | |
+| `POSTGRES_HOST` | Host donde se ejecuta el servidor de base de datos PostgreSQL. | `db` (común en Docker Compose) o `localhost` |
+| `POSTGRES_PORT` | Puerto de conexión de la base de datos PostgreSQL. | `5432` |
+| `SSN_API_USERNAME` | Nombre de usuario para autenticación con la API de la SSN. | |
+| `SSN_API_PASSWORD` | **Contraseña** para autenticación con la API de la SSN. | |
+| `SSN_API_CIA` | Código de compañía asociado a las operaciones de la API de SSN. | `0744` |
+| `SSN_API_BASE_URL` | URL base de la API de la SSN. Asegúrate de usar la URL correcta para el entorno (test/producción). | `https://testri.ssn.gob.ar/api` |
+| `SSL_DOMAIN` | Dominio principal para la configuración de certificados SSL. | `inversiones.test.nobleseguros.com` |
+| `SSL_IP` | Dirección IP asociada al dominio SSL (útil para ciertas configuraciones de certificados). | `192.168.190.77` |
+| `NGINX_PORT_HTTP` | Puerto HTTP que Nginx expondrá en el host. | `8888` (o `80` para el puerto HTTP estándar) |
+| `NGINX_PORT_HTTPS` | Puerto HTTPS que Nginx expondrá en el host. | `443` (el puerto HTTPS estándar) |
+| `COMPANY_NAME` | Nombre de la compañía a mostrar en la aplicación. | `Noble Seguros` |
+| `COMPANY_WEBSITE` | URL del sitio web oficial de la compañía. | `https://www.nobleseguros.com` |
+| `COMPANY_LOGO_URL` | URL del logo de la compañía para usar en la aplicación. | `https://documentos.nobleseguros.com/externo/noble_logo_negro.png` |
 
 ## 📋 Mantenimiento
 
@@ -195,15 +194,13 @@ Para ver los logs de la aplicación:
 docker compose logs web
 ```
 
-### Actualizaciones
-
-Para actualizar la aplicación:
+Para ver los logs de Nginx:
 
 ```bash
-git pull
-docker compose down
-docker compose up -d --build
+docker compose logs nginx
 ```
+
+También puedes acceder a los logs propios de Django yendo al directorio `ssn/logs/`.
 
 ### Renovación de certificados SSL
 
@@ -254,7 +251,8 @@ python manage.py clean_preview_excels --hours 1
 # Reemplaza 1 por la cantidad de horas que desees (el parámetro --hours es opcional)
 ```
 
-> 💡 **Se recomienda programar estos comandos en el *host* mediante `cron`** para que la limpieza sea automática y la aplicación no acumule datos ni archivos innecesarios.
+> [!TIP]
+> **Se recomienda programar estos comandos en el *host* mediante `cron`** para que la limpieza sea automática y la aplicación no acumule datos ni archivos innecesarios.
 >
 > **Ejemplo de entrada en crontab para ejecutarlo periódicamente:**
 >
@@ -271,9 +269,14 @@ Este repositorio está configurado para no incluir archivos con información sen
 Los archivos con datos sensibles no deben subirse a Git:
 
 - `.env` (contiene contraseñas y claves)
-- `nginx/default.conf` (configuración específica de servidor)
 
 ## ✏ TODOs
 
 - Generar presentación MENSUAL de operaciones a la SSN.
 - Revisar APIS BYMA, para poder generar reportes, etc.
+
+---
+
+## 📧 Contacto
+
+Si tenes preguntas, sugerencias o necesitas ayuda con este proyecto, no dudes en contactarme, Guido Delponte, a través de mi linkedIn: [linkedin.com/in/gdelponte](https://www.linkedin.com/in/guido-delponte/).
