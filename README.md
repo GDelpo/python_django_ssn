@@ -26,9 +26,86 @@ Esta aplicación permite gestionar, registrar y enviar operaciones financieras a
 
 ### Requisitos previos
 
-- Docker y Docker Compose (`docker compose`, versión 2+)
+- Docker y Docker Compose (`docker compose`, versión 2+) 
 - Node.js y npm (para compilar Tailwind CSS)
 - Git
+- Python 3.12 o superior (para desarrollo local)
+- PostgreSQL 15 o superior (para desarrollo local)
+- Certificados SSL válidos (opcional, pero recomendado para producción)
+
+<details>
+
+<summary>⚙️ Guía para Configurar Permisos de Docker en Linux  🐧</summary>
+
+Este es el procedimiento para permitir que un usuario ejecute comandos de `docker` sin `sudo` y para diagnosticar y resolver los problemas de permisos más habituales.
+
+##### Paso 1: Asegurar que el grupo `docker` exista y añadir tu usuario
+
+Primero, nos aseguramos de que el grupo `docker` exista y luego agregamos nuestro usuario a él.
+
+1.  **Ejecutá los siguientes dos comandos.** El primero crea el grupo `docker` si no existe (si ya existe, solo mostrará un error inofensivo). El segundo agrega tu usuario actual (identificado por la variable `$USER`) a ese grupo.
+
+    ```bash
+    sudo groupadd docker
+    sudo usermod -aG docker $USER
+    ```
+
+##### Paso 2: Aplicar los cambios de grupo (Paso crucial 🔄)
+
+Los cambios de grupo no se aplican a las sesiones de terminal que ya están abiertas. Este es el punto donde ocurren la mayoría de los problemas.
+
+1.  **Cerrá la sesión por completo y volvé a entrar.** Esta es la forma más confiable de asegurar que tu usuario inicie con los nuevos permisos.
+
+    ```bash
+    exit
+    ```
+
+2.  **Reconectate** a tu servidor.
+
+-----
+
+##### Paso 3: Verificar la instalación
+
+Una vez que te hayas reconectado, verificá si la configuración funcionó.
+
+1.  **Ejecutá un comando de Docker** sin `sudo`:
+    ```bash
+    docker ps
+    ```
+2.  Si todo está correcto, deberías ver una tabla vacía con los encabezados `CONTAINER ID`, `IMAGE`, etc., y **ningún error de "permission denied"**. Si es así, ¡listo\! ✅
+
+-----
+
+##### Troubleshooting: ¿Todavía tenés el error "permission denied"? ⚠️
+
+Si después de reiniciar la sesión el error persiste, el problema casi siempre está en los permisos del archivo de comunicación de Docker, conocido como "socket".
+
+1.  **Inspeccioná los permisos del socket** de Docker con este comando:
+
+    ```bash
+    ls -l /var/run/docker.sock
+    ```
+
+2.  **Analizá la salida.** Tenés que fijarte en el propietario y el grupo (la tercera y cuarta columna).
+
+      * **Salida CORRECTA:** El grupo debe ser `docker`.
+        ```
+        srw-rw---- 1 root docker 0 jul 30 15:30 /var/run/docker.sock
+        ```
+      * **Salida INCORRECTA:** El grupo es `root`, lo que causa el error.
+        ```
+        srw-rw---- 1 root root 0 jul 30 15:20 /var/run/docker.sock
+        ```
+
+3.  **Corregí los permisos (si es necesario).** Si tu salida fue la incorrecta, ejecutá este comando para cambiar el grupo del archivo a `docker`:
+
+    ```bash
+    sudo chown root:docker /var/run/docker.sock
+    ```
+
+4.  **Volvé a verificar.** Ahora sí, el comando `docker ps` debería funcionar inmediatamente.
+
+</details>
 
 ### Instalación con Docker (recomendado)
 
