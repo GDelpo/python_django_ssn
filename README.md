@@ -361,6 +361,9 @@ Los archivos con datos sensibles no deben subirse a Git:
 
 - Generar presentación MENSUAL de operaciones a la SSN.
 - Revisar APIS BYMA, para poder generar reportes, etc.
+- Organizar archivos Docker y Nginx en un directorio `docker/` para mayor claridad. Esto hace cambiar algunas rutas en el `docker-compose.yml` y en los archivos de configuración de Nginx.
+- Implementar directamente los trabajos cron en el contenedor web, para evitar depender del host. Esto permite que la limpieza de solicitudes y archivos temporales se realice automáticamente sin intervención manual. Se volvería completamente Docker nativo.
+
 
 ---
 

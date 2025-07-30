@@ -416,7 +416,7 @@ class OperacionPreviewView(
     TemplateView,
 ):
     # --- Atributos configurables ---
-    template_name = "lists/preview.html"
+    template_name = "preview.html"
     title = "Vista Previa de Solicitud"
 
     # --- Métodos ---
