@@ -80,7 +80,17 @@ pip install -r requirements.txt
 ```
 
 > [!TIP]
-> Si estás en Windows y encuentras un error con python-magic, es posible que necesites reemplazarlo por python-magic-bin en tu archivo requirements.txt o instalarlo manualmente: pip install python-magic-bin.
+> Si estás en un entorno Windows y encuentras un error relacionado con la librería `python-magic`, es probable que necesites una versión precompilada. Para solucionarlo, puedes optar por una de las siguientes opciones:
+> * **Reemplazar en `requirements.txt`**: Edita tu archivo `requirements.txt` y cambia `python-magic` por `python-magic-bin`.
+> * **Instalación manual**: Si prefieres no modificar el `requirements.txt` o necesitas instalarlo de forma puntual, ejecuta el siguiente comando:
+>  ```bash
+>  pip install python-magic-bin
+>  ```
+> * **Desinstalación (si ya tienes `python-magic` y no funciona)**: Si ya intentaste instalar `python-magic` sin éxito, te recomendamos desinstalarlo primero antes de instalar la versión `bin`:
+>  ```bash
+>  pip uninstall python-magic
+>  pip install python-magic-bin
+>  ```
 
 4. **Configurar variables de entorno**
 
