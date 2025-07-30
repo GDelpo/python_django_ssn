@@ -158,23 +158,23 @@ Las principales variables de entorno que debes configurar:
 | `DJANGO_SETTINGS_MODULE` | Define el módulo de configuración de Django a utilizar. | `config.settings.prod` (producción) o `config.settings.dev` (desarrollo) |
 | `DEBUG` | Activa o desactiva el modo de depuración de Django. En producción, debe ser `False`. | `True` o `False` |
 | `SECRET_KEY` | **Clave secreta única y segura para tu instalación de Django.** ¡Absolutamente crítica para la seguridad! | Genera una cadena aleatoria compleja. |
-| `ALLOWED_HOSTS` | Lista de hosts/dominios permitidos para servir la aplicación. Múltiples valores se separan con comas. | `"localhost,inversiones.test.nobleseguros.com,192.168.190.77"` |
-| `POSTGRES_DB` | Nombre de la base de datos PostgreSQL a la que la aplicación se conectará. | `ssn_db` |
-| `POSTGRES_USER` | Nombre de usuario para la conexión a la base de datos PostgreSQL. | `ssn_user` |
+| `ALLOWED_HOSTS` | Lista de hosts/dominios permitidos para servir la aplicación. Múltiples valores se separan con comas. | `"localhost,inversiones.test.tu-compania.com,192.168.190.001"` |
+| `POSTGRES_DB` | Nombre de la base de datos PostgreSQL a la que la aplicación se conectará. | `inversiones_db` |
+| `POSTGRES_USER` | Nombre de usuario para la conexión a la base de datos PostgreSQL. | `inversiones_user` |
 | `POSTGRES_PASSWORD` | **Contraseña** del usuario de PostgreSQL. | |
 | `POSTGRES_HOST` | Host donde se ejecuta el servidor de base de datos PostgreSQL. | `db` (común en Docker Compose) o `localhost` |
 | `POSTGRES_PORT` | Puerto de conexión de la base de datos PostgreSQL. | `5432` |
 | `SSN_API_USERNAME` | Nombre de usuario para autenticación con la API de la SSN. | |
 | `SSN_API_PASSWORD` | **Contraseña** para autenticación con la API de la SSN. | |
-| `SSN_API_CIA` | Código de compañía asociado a las operaciones de la API de SSN. | `0744` |
+| `SSN_API_CIA` | Código de compañía asociado a las operaciones de la API de SSN. | `0000` |
 | `SSN_API_BASE_URL` | URL base de la API de la SSN. Asegúrate de usar la URL correcta para el entorno (test/producción). | `https://testri.ssn.gob.ar/api` |
-| `SSL_DOMAIN` | Dominio principal para la configuración de certificados SSL. | `inversiones.test.nobleseguros.com` |
-| `SSL_IP` | Dirección IP asociada al dominio SSL (útil para ciertas configuraciones de certificados). | `192.168.190.77` |
+| `SSL_DOMAIN` | Dominio principal para la configuración de certificados SSL. | `inversiones.test.tu-compania.com` |
+| `SSL_IP` | Dirección IP asociada al dominio SSL (útil para ciertas configuraciones de certificados). | `192.168.190.001` |
 | `NGINX_PORT_HTTP` | Puerto HTTP que Nginx expondrá en el host. | `8888` (o `80` para el puerto HTTP estándar) |
 | `NGINX_PORT_HTTPS` | Puerto HTTPS que Nginx expondrá en el host. | `443` (el puerto HTTPS estándar) |
-| `COMPANY_NAME` | Nombre de la compañía a mostrar en la aplicación. | `Noble Seguros` |
-| `COMPANY_WEBSITE` | URL del sitio web oficial de la compañía. | `https://www.nobleseguros.com` |
-| `COMPANY_LOGO_URL` | URL del logo de la compañía para usar en la aplicación. | `https://documentos.nobleseguros.com/externo/noble_logo_negro.png` |
+| `COMPANY_NAME` | Nombre de la compañía a mostrar en la aplicación. | `Tu Compania` |
+| `COMPANY_WEBSITE` | URL del sitio web oficial de la compañía. | `https://www.tu-compania.com` |
+| `COMPANY_LOGO_URL` | URL del logo de la compañía para usar en la aplicación. | `https://tu-compania_logo_negro.png` |
 
 ## 📋 Mantenimiento
 
