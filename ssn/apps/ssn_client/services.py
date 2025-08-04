@@ -3,6 +3,7 @@ from http import HTTPStatus
 
 from django.apps import apps
 from django.utils import timezone
+from operaciones.models import EstadoSolicitud
 from ssn_client.models import SolicitudResponse
 
 logger = logging.getLogger("ssn_client")
@@ -27,95 +28,83 @@ def guardar_respuesta_solicitud(base_request, endpoint, payload, response, statu
 
 
 def enviar_y_guardar_solicitud(base_request, operations, allow_empty=False):
+    """
+    Envía (POST + Confirmación) o rectifica (PUT) una solicitud al mismo endpoint.
+    """
     try:
         from operaciones.serializers import serialize_operations
 
-        # 0) Chequeo: ¿ya fue enviada?
-        if base_request.send_at:
-            logger.warning(
-                f"La solicitud {base_request.uuid} ya fue enviada el {base_request.send_at}."
-            )
-            return (
-                {
-                    "error": f"Esta solicitud ya fue enviada el {base_request.send_at.strftime('%d/%m/%Y %H:%M')}. No se puede volver a enviar."
-                },
-                HTTPStatus.BAD_REQUEST,
-                None,
-            )
+        # 1) Decidir el método HTTP basado en el estado
+        if base_request.estado == EstadoSolicitud.BORRADOR:
+            http_method_name = "post_resource"
+        elif base_request.estado == EstadoSolicitud.RECTIFICANDO:
+            http_method_name = "put_resource"
+        else:
+            msg = f"La solicitud {base_request.uuid} no se puede procesar en su estado actual."
+            logger.warning(msg)
+            return ({"error": msg}, HTTPStatus.BAD_REQUEST, None)
 
-        # 1) Validar presencia de operaciones (a menos que permitamos vacío)
+        # 2) Validar y serializar
         if not operations and not allow_empty:
-            logger.warning(
-                f"Intento de envío sin operaciones (solicitud {base_request.uuid})"
-            )
             return (
                 {"error": "No hay operaciones para enviar."},
                 HTTPStatus.BAD_REQUEST,
                 None,
             )
 
-        # 2) Serializar (operaciones será [] si está vacío)
         payload = serialize_operations(base_request, operations)
-        logger.debug(
-            f"Payload serializado para solicitud {base_request.uuid}: {payload}"
-        )
         tipo_entrega = payload.get("tipoEntrega")
         if not tipo_entrega:
-            logger.error(
-                f"Falta el tipo de entrega en el payload (solicitud {base_request.uuid})"
-            )
             return {"error": "Falta el tipo de entrega."}, HTTPStatus.BAD_REQUEST, None
 
+        # 3) Ejecutar la llamada a la API (POST o PUT)
         ssn_client = apps.get_app_config("ssn_client").ssn_client
+        http_method = getattr(ssn_client, http_method_name)
 
-        # 3) Paso 1: entrega
-        endpoint_entrega = f"entrega{tipo_entrega}"
+        endpoint = f"entrega{tipo_entrega}"
+
         logger.info(
-            f"Enviando operaciones a {endpoint_entrega} (solicitud {base_request.uuid})"
+            f"Ejecutando {http_method_name.upper()} en {endpoint} para solicitud {base_request.uuid}"
         )
-        entrega_response, entrega_status = ssn_client.post_resource(
-            endpoint_entrega, data=payload
-        )
-        obj_entrega = guardar_respuesta_solicitud(
-            base_request, endpoint_entrega, payload, entrega_response, entrega_status
-        )
-        if entrega_status >= 400:
-            logger.error(
-                f"Error en {endpoint_entrega}: {entrega_response} (solicitud {base_request.uuid})"
-            )
-            return entrega_response, entrega_status, obj_entrega
+        response, status = http_method(endpoint, data=payload)
 
-        # 4) Paso 2: confirmar entrega
-        fields = ["codigoCompania", "tipoEntrega", "cronograma"]
-        confirm_payload = {key: payload[key] for key in fields if key in payload}
-        endpoint_confirm = f"confirmarEntrega{tipo_entrega}"
-        logger.info(
-            f"Confirmando entrega en {endpoint_confirm} (solicitud {base_request.uuid})"
+        obj_response = guardar_respuesta_solicitud(
+            base_request, endpoint, payload, response, status
         )
-        confirm_response, confirm_status = ssn_client.post_resource(
-            endpoint_confirm, data=confirm_payload
-        )
-        obj_confirm = guardar_respuesta_solicitud(
-            base_request, endpoint_confirm, payload, confirm_response, confirm_status
-        )
-        if confirm_status >= 400:
-            logger.error(
-                f"Error en {endpoint_confirm}: {confirm_response} (solicitud {base_request.uuid})"
-            )
-            return confirm_response, confirm_status, obj_confirm
+        if status >= 400:
+            return response, status, obj_response
 
-        # 5) Marcar como enviado
+        # 4) Paso de Confirmación (SOLO PARA ENVÍOS NUEVOS CON POST)
+        if base_request.estado == EstadoSolicitud.BORRADOR:
+            fields = ["codigoCompania", "tipoEntrega", "cronograma"]
+            confirm_payload = {key: payload[key] for key in fields if key in payload}
+            endpoint_confirm = f"confirmarEntrega{tipo_entrega}"
+
+            logger.info(f"Confirmando entrega en {endpoint_confirm}")
+            response, status = ssn_client.post_resource(
+                endpoint_confirm, data=confirm_payload
+            )
+
+            obj_response = guardar_respuesta_solicitud(
+                base_request, endpoint_confirm, confirm_payload, response, status
+            )
+            if status >= 400:
+                return response, status, obj_response
+
+        # 5) Finalizar: Actualizar el estado del modelo
         base_request.send_at = timezone.now()
+        base_request.estado = EstadoSolicitud.ENVIADA
         base_request.save()
-        logger.info(f"Solicitud {base_request.uuid} enviada correctamente")
-        return confirm_response, confirm_status, obj_confirm
+        logger.info(f"Solicitud {base_request.uuid} procesada correctamente")
+
+        return response, status, obj_response
 
     except Exception as e:
         logger.error(
-            f"Error inesperado enviando solicitud {base_request.uuid}: {str(e)}"
+            f"Error inesperado procesando solicitud {base_request.uuid}: {str(e)}"
         )
         return (
-            {"error": "Error inesperado en el servidor", "detalle": str(e)},
+            {"error": "Error inesperado", "detalle": str(e)},
             HTTPStatus.INTERNAL_SERVER_ERROR,
             None,
         )

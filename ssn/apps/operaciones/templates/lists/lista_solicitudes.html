@@ -1,5 +1,5 @@
 {% extends "lists/partials/_base_list.html" %}
-
+{% load component_tags %}
 {% block list_content %}
   <table class="min-w-full table-auto divide-y divide-gray-200 bg-white rounded-lg overflow-hidden shadow-sm block md:table">
         <caption class="sr-only">{{ title }}</caption>
@@ -73,7 +73,7 @@
               <td role="gridcell" class="px-2 py-2 md:table-cell block text-sm text-gray-700 text-center md:text-right" data-label="Acciones">
                 <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">Acciones</span>
                   {% url 'operaciones:lista_operaciones' uuid=solicitud.uuid as list_ops_url %}
-                  {% include "componentes/link_button.html" with href=list_ops_url label="Ver" icon="fas fa-eye" color="primary" %}
+                  {% link_button href=list_ops_url label="Ver solicitud" icon="fas fa-eye" color="primary" size="sm" %}
                 </div>
               </td>
             </tr>

@@ -381,3 +381,24 @@ class SsnService(metaclass=Singleton):
             logger.error(f"Fallo al enviar POST al recurso: {resource}")
             result = {"error": f"No se pudo enviar datos al recurso {resource}"}
         return result, status_code
+
+    def put_resource(
+        self, resource: str, data: Optional[Dict[str, Any]] = None
+    ) -> Tuple[Dict[str, Any], int]:
+        """
+        Realiza una solicitud PUT para actualizar datos en un recurso específico.
+
+        Args:
+            resource: Nombre del recurso
+            data: Datos a enviar para la actualización
+
+        Returns:
+            Tuple[Dict[str, Any], int]: Tupla con (datos de respuesta, código de estado HTTP)
+        """
+        url = f"{self.base_url}/inv/{resource}"
+        # La única diferencia clave es usar self.session.put
+        result, status_code = self._make_request(self.session.put, url, json=data)
+        if result is None:
+            logger.error(f"Fallo al enviar PUT al recurso: {resource}")
+            result = {"error": f"No se pudo actualizar datos en el recurso {resource}"}
+        return result, status_code

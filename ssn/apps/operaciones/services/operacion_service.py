@@ -1,4 +1,8 @@
+import logging
+
 from ..models import TipoEntrega
+
+logger = logging.getLogger("operaciones")
 
 
 class OperacionesService:
@@ -58,3 +62,68 @@ class OperacionesService:
             ("Cronograma", base_request.cronograma or "—"),
             ("Operaciones", OperacionesService.get_total_operaciones(base_request)),
         ]
+
+    @staticmethod
+    def has_changes_since_rectification(base_request):
+        """
+        Versión eficiente que delega el trabajo a la base de datos.
+        Recomendada para producción.
+        """
+        last_submission_time = base_request.send_at
+        if not last_submission_time:
+            return False
+
+        related_managers_names = []
+        if base_request.tipo_entrega == "Semanal":
+            related_managers_names = ["compras", "ventas", "canjes", "plazos_fijos"]
+        elif base_request.tipo_entrega == "Mensual":
+            related_managers_names = [
+                "stocks_inversion_mensuales",
+                "stocks_plazofijo_mensuales",
+                "stocks_chequespd_mensuales",
+            ]
+
+        # Pregunta a la base de datos si "existe" algún registro que coincida
+        for manager_name in related_managers_names:
+            manager = getattr(base_request, manager_name)
+            if manager.filter(updated_at__gt=last_submission_time).exists():
+                return True  # La BD encontró uno. Fin.
+
+        return False
+
+    @staticmethod
+    def revert_new_operations(base_request):
+        """
+        Busca y elimina todas las operaciones creadas durante una sesión de
+        rectificación para revertir los cambios.
+        """
+        last_submission_time = base_request.send_at
+        if not last_submission_time:
+            return 0  # No hay nada que revertir
+
+        # Define qué relaciones chequear
+        related_managers_names = []
+        if base_request.tipo_entrega == TipoEntrega.SEMANAL:
+            related_managers_names = ["compras", "ventas", "canjes", "plazos_fijos"]
+        elif base_request.tipo_entrega == TipoEntrega.MENSUAL:
+            related_managers_names = [
+                "stocks_inversion_mensuales",
+                "stocks_plazofijo_mensuales",
+                "stocks_chequespd_mensuales",
+            ]
+
+        total_deleted_count = 0
+        # Itera y elimina las operaciones nuevas
+        for manager_name in related_managers_names:
+            manager = getattr(base_request, manager_name)
+            ops_to_delete = manager.filter(created_at__gt=last_submission_time)
+
+            if ops_to_delete.exists():
+                count, _ = ops_to_delete.delete()
+                total_deleted_count += count
+                logger.info(
+                    f"Reversión: Se eliminaron {count} operaciones de '{manager_name}' "
+                    f"para la solicitud {base_request.uuid}."
+                )
+
+        return total_deleted_count

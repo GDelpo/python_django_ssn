@@ -1,4 +1,5 @@
 {% extends "forms/partials/_base_form.html" %}
+{% load component_tags %}
 {% block form_fields %}
   <p class="text-red-700 text-center">
     ¿Estás seguro de que querés eliminar esta operación?
@@ -10,5 +11,6 @@
 {% endblock %}
 
 {% block extra_buttons %}
-  {% include "componentes/link_button.html" with href=cancel_url label="Cancelar" icon="fas fa-times" color="secondary" %}
+  {% link_button href=cancel_url label="Cancelar" icon="fas fa-times" color="secondary" %}
+  {% endwith %}
 {% endblock %}

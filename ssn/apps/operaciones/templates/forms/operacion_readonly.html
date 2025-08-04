@@ -1,4 +1,5 @@
 {% extends "forms/partials/_base_form.html" %}
+{% load component_tags %}
 {% block form_fields %}
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     {# Sección principal de datos #}
@@ -62,5 +63,5 @@
 {% endblock %}
 
 {% block submit_button %}
-  {% include "componentes/link_button.html" with href=header_buttons.0.href label="Volver al listado" icon="fas fa-arrow-left" color="secondary" %}
+  {% link_button href=header_buttons.0.href label="Volver al listado" icon="fas fa-arrow-left" color="secondary" %}
 {% endblock %}

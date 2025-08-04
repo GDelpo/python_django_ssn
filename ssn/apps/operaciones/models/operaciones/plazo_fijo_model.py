@@ -55,6 +55,14 @@ class PlazoFijoOperacion(models.Model):
         help_text="Solicitud a la que pertenece este plazo fijo",
     )
 
+    created_at = models.DateTimeField(
+        auto_now_add=True, null=True, blank=True, verbose_name="Fecha de Creación"
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True, null=True, blank=True, verbose_name="Última Modificación"
+    )
+
     def clean(self):
         super().clean()
         errors = {}

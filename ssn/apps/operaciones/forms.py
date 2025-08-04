@@ -54,7 +54,7 @@ class BaseRequestForm(forms.ModelForm):
 
     class Meta:
         model = BaseRequestModel
-        exclude = ["cronograma", "send_at"]
+        exclude = ["cronograma", "send_at", "estado", "updated_at"]
 
     def __init__(self, *args, **kwargs):
         """

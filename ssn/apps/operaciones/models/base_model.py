@@ -3,7 +3,7 @@ import uuid
 from django.core.validators import MinLengthValidator
 from django.db import models
 
-from .choices import TipoEntrega, TipoOperacion
+from .choices import EstadoSolicitud, TipoEntrega, TipoOperacion
 
 
 class BaseRequestModel(models.Model):
@@ -23,8 +23,21 @@ class BaseRequestModel(models.Model):
         validators=[MinLengthValidator(7)],
         help_text="Periodo del cronograma (YYYY-MM)",
     )
+
+    estado = models.CharField(
+        max_length=20,
+        choices=EstadoSolicitud.choices,
+        default=EstadoSolicitud.BORRADOR,
+        help_text="Estado de la solicitud (Borrador, Enviada, Rectificando)",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     send_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def is_editable(self):
+        return self.estado in [EstadoSolicitud.BORRADOR, EstadoSolicitud.RECTIFICANDO]
 
     def __str__(self):
         return f"Tipo de Entrega: {self.tipo_entrega} | Cronograma: {self.cronograma}"
@@ -49,6 +62,13 @@ class BaseOperacionModel(models.Model):
     )
     fecha_movimiento = models.DateField(help_text="Fecha de movimiento (DDMMYYYY)")
     fecha_liquidacion = models.DateField(help_text="Fecha de liquidación (DDMMYYYY)")
+
+    created_at = models.DateTimeField(
+        auto_now_add=True, null=True, blank=True, verbose_name="Fecha de Creación"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, null=True, blank=True, verbose_name="Última Modificación"
+    )
 
     @property
     def fecha_operacion(self):

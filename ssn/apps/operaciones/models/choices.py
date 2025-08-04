@@ -1,6 +1,12 @@
 from django.db import models
 
 
+class EstadoSolicitud(models.TextChoices):
+    BORRADOR = "BORRADOR", "Borrador"
+    ENVIADA = "ENVIADA", "Enviada"
+    RECTIFICANDO = "RECTIFICANDO", "Rectificando"
+
+
 class TipoEntrega(models.TextChoices):
     SEMANAL = "Semanal", "Semanal"
     MENSUAL = "Mensual", "Mensual"

@@ -1,5 +1,5 @@
 {% extends "lists/partials/_base_list.html" %} 
-
+{% load component_tags %}
 {% block list_content %} 
       <table class="min-w-full table-auto divide-y divide-gray-200 bg-white rounded-lg overflow-hidden shadow-sm block md:table">
           <caption class="sr-only">{{title}}</caption>
@@ -81,17 +81,18 @@
               <td role="gridcell" class="px-4 py-3 md:table-cell block text-sm text-gray-700 text-center md:text-right" data-label="Acciones">
                 <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">Acciones</span>
                 <div class="flex flex-wrap justify-center md:justify-end gap-2">
-                  {% if base_request.send_at %}
+                  {% if not base_request.is_editable %}
                     <!-- Modo solo lectura - mostrar enlace a vista detallada -->
                     {% url 'operaciones:ver_operacion' uuid=base_request.uuid tipo_operacion=op.tipo_operacion pk=op.id as view_url %}
-                    {% include "componentes/link_button.html" with href=view_url label="Ver" icon="fas fa-eye" color="primary" %}
-                  </a>
+                    {% link_button href=view_url label="Ver Detalle" icon="fas fa-eye" color="primary" size="sm" %}
                   {% else %}
                     <!-- Modo editable - mostrar acciones normales -->
+                    {% comment %} Armamos el boton de editar  {% endcomment %}
                     {% url 'operaciones:editar_operacion' uuid=base_request.uuid tipo_operacion=op.tipo_operacion pk=op.id as edit_url %} 
+                    {% link_button href=edit_url label="Editar" icon="fas fa-pen" color="warning" size="sm" %}
+                    {% comment %} Armamos el boton de eliminar {% endcomment %}
                     {% url 'operaciones:eliminar_operacion' uuid=base_request.uuid tipo_operacion=op.tipo_operacion pk=op.id as delete_url %}
-                    {% include "componentes/link_button.html" with href=edit_url icon="fas fa-pen" color="warning" %}
-                    {% include "componentes/link_button.html" with href=delete_url icon="fas fa-trash" color="danger" %}
+                    {% link_button href=delete_url label="Eliminar" icon="fas fa-trash" color="danger" size="sm" %}
                   {% endif %}
                 </div>
               </td>
@@ -102,16 +103,18 @@
                 <div class="flex flex-col items-center justify-center">
                   <i class="fas fa-inbox text-gray-300 text-4xl mb-4"></i>
                   <p class="text-gray-500">No se han registrado operaciones.</p>
-                  <p class="text-gray-500 mt-2">Para empezar, crea una nueva operación.</p>
-                  {% url 'operaciones:seleccion_tipo_operacion' uuid=base_request.uuid as create_url %} 
-                  {% include "componentes/link_button.html" with href=create_url label="Crear nueva operación" icon="fas fa-plus" color="primary" %} 
-                  {% if base_request.tipo_entrega == "Semanal" %}
-                    <p class="text-gray-500 mt-2">
-                      Si no hubo movimientos, podés enviar la solicitud sin operaciones.
-                    </p>
-                    {% url 'operaciones:enviar_operaciones' uuid=base_request.uuid as empty_url %}
-                    {% include "componentes/link_button.html" with href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud sin operaciones" icon="fas fa-paper-plane" color="danger" %} 
-                {% endif %}
+                  {% if base_request.is_editable %}
+                    <p class="text-gray-500 mt-2">Para empezar, crea una nueva operación.</p>
+                    {% url 'operaciones:seleccion_tipo_operacion' uuid=base_request.uuid as create_url %}
+                    {% link_button href=create_url label="Crear nueva operación" icon="fas fa-plus" color="primary" %}
+                    {% if base_request.tipo_entrega == "Semanal" %}
+                      <p class="text-gray-500 mt-2">
+                        Si no hubo movimientos, podés enviar la solicitud sin operaciones.
+                      </p>
+                      {% url 'operaciones:enviar_operaciones' uuid=base_request.uuid as empty_url %}
+                      {% link_button href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud sin operaciones" icon="fas fa-paper-plane" color="danger" %}
+                    {% endif %}
+                  {% endif %}
                 </div>
               </td>
             </tr>

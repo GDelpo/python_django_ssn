@@ -27,7 +27,7 @@ from .helpers import (
 )
 from .helpers.form_styles import disable_field
 from .helpers.text_utils import pretty_json
-from .models import BaseRequestModel
+from .models import BaseRequestModel, EstadoSolicitud
 from .services import OperacionesService, SessionService, SolicitudPreviewService
 
 logger = logging.getLogger("operaciones")
@@ -144,7 +144,7 @@ class OperacionListView(
     OperationReadonlyViewMixin,
     ListView,
 ):
-    # --- Atributos configurables ---
+    # --- Atributos configurables (sin cambios) ---
     template_name = "lists/lista_op.html"
     context_object_name = "operations"
     paginate_by = 10
@@ -157,6 +157,9 @@ class OperacionListView(
 
     # --- Métodos ---
     def get_title(self):
+        # Si está rectificando, podemos añadirlo al título para mayor claridad
+        if self.base_request.estado == EstadoSolicitud.RECTIFICANDO:
+            return f"{self.title} (Rectificando)"
         return self.title
 
     def get_breadcrumbs(self):
@@ -166,11 +169,69 @@ class OperacionListView(
         return OperacionesService.get_all_operaciones(self.base_request)
 
     def get_header_buttons_config(self):
-        sent = bool(self.base_request.send_at)
         has_ops = bool(self.get_queryset())
-        if sent:
+
+        if not self.base_request.is_editable:
+            # Para el estado ENVIADA, solo volver y previsualizar
             return ["back_solicitudes", "preview"]
-        return ["new_operation"] + (["preview"] if has_ops else [])
+        else:
+            # Para BORRADOR y RECTIFICANDO
+            return ["back_solicitudes", "new_operation"] + (
+                ["preview"] if has_ops else []
+            )
+
+    def get_header_buttons(self):
+        buttons = super().get_header_buttons()
+
+        if self.base_request.estado == "RECTIFICANDO":
+            has_changes = OperacionesService.has_changes_since_rectification(
+                self.base_request
+            )
+
+            if has_changes:
+                for button in buttons:
+                    # Buscamos por '/preview/'
+                    if button.get("href") and "/preview/" in button["href"]:
+                        button["label"] = "Revisar Cambios"
+                        button["color"] = "warning"
+                        break
+
+        return buttons
+
+    def post(self, request, *args, **kwargs):
+        """
+        Maneja las acciones de Iniciar y Cancelar la rectificación.
+        """
+        # --- Acción para INICIAR la rectificación ---
+        if "rectify_action" in request.POST:
+            if not self.base_request.is_editable:
+                self.base_request.estado = EstadoSolicitud.RECTIFICANDO
+                self.base_request.save()
+                messages.info(request, "Modo de rectificación activado.")
+
+        # --- Acción para CANCELAR la rectificación ---
+        elif "cancel_rectify_action" in request.POST:
+            if self.base_request.estado == EstadoSolicitud.RECTIFICANDO:
+                OperacionesService.revert_new_operations(self.base_request)
+                self.base_request.estado = EstadoSolicitud.ENVIADA
+                self.base_request.save()
+                messages.success(
+                    request,
+                    "La rectificación ha sido cancelada y las operaciones nuevas fueron descartadas.",
+                )
+
+        return redirect(request.path)
+
+    def get_context_data(self, **kwargs):
+        """
+        Añade la variable 'has_changes' al contexto si se está rectificando.
+        """
+        context = super().get_context_data(**kwargs)
+        if self.base_request.estado == EstadoSolicitud.RECTIFICANDO:
+            context["has_changes"] = OperacionesService.has_changes_since_rectification(
+                self.base_request
+            )
+        return context
 
 
 class TipoOperacionSelectView(
@@ -424,7 +485,7 @@ class OperacionPreviewView(
         return self.title
 
     def get_header_buttons_config(self):
-        return ["back_operations"] + (["send"] if not self.base_request.send_at else [])
+        return ["back_operations"] + (["send"] if self.base_request.is_editable else [])
 
     def get(self, request, *args, **kwargs):
         operations = OperacionesService.get_all_operaciones(self.base_request)

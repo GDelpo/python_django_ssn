@@ -55,84 +55,124 @@ class BreadcrumbsMixin:
 class HeaderButtonsMixin:
     """
     Genera `header_buttons` a partir de `get_header_buttons_config()` y un mapa de fábricas.
-    Provee también el helper `get_back_button()`.
+    Garantiza que todos los botones tengan una estructura consistente y maneja dependencias de forma segura.
     """
 
     header_buttons_config = []
 
-    BUTTON_FACTORIES = {
-        "back_base": lambda self: self.get_back_button(
-            "operaciones:solicitud_base", use_uuid=False
-        ),
-        "back_selection": lambda self: self.get_back_button(
-            "operaciones:seleccion_tipo_operacion"
-        ),
-        "back_operations": lambda self: self.get_back_button(
-            "operaciones:lista_operaciones"
-        ),
-        "back_solicitudes": lambda self: self.get_back_button(
-            "operaciones:lista_solicitudes", use_uuid=False
-        ),
-        "new_base": lambda self: {
-            "href": reverse("operaciones:solicitud_base"),
-            "label": "Nueva Solicitud",
-            "icon": "fas fa-plus",
-            "color": "primary",
-        },
-        "new_operation": lambda self: {
-            "href": reverse(
-                "operaciones:seleccion_tipo_operacion",
-                kwargs={"uuid": str(self.base_request.uuid)},
-            ),
-            "label": "Nueva Operación",
-            "icon": "fas fa-plus",
-            "color": "primary",
-        },
-        "preview": lambda self: {
-            "href": reverse(
-                "operaciones:preview_operaciones",
-                kwargs={"uuid": str(self.base_request.uuid)},
-            ),
-            "label": "Revisar Solicitud",
-            "icon": "fas fa-eye",
-            "color": "success",
-        },
-        "send": lambda self: {
-            "id": "enviarSolicitud",
-            "href": reverse(
-                "operaciones:enviar_operaciones",
-                kwargs={"uuid": str(self.base_request.uuid)},
-            ),
-            "label": "Enviar Solicitud",
-            "icon": "fas fa-paper-plane",
-            "color": "success",
-        },
-    }
+    # --- Métodos de creación de botones ---
 
-    def get_header_buttons_config(self):
-        cfg = self.header_buttons_config
-        return cfg() if callable(cfg) else (cfg or [])
+    def _create_button(self, href, label, **kwargs):
+        # Usamos kwargs para que sea más flexible
+        button = {
+            "id": kwargs.get("id"),
+            "href": href,
+            "label": label,
+            "icon": kwargs.get("icon"),
+            "color": kwargs.get("color", "primary"),
+            "condition": kwargs.get("condition"),
+        }
+        return button
 
     def get_back_button(self, url_name, extra_kwargs=None, use_uuid=True):
         if extra_kwargs is None:
             extra_kwargs = {}
-        if use_uuid and hasattr(self, "base_request"):
-            extra_kwargs["uuid"] = str(self.base_request.uuid)
-        return {
-            "href": reverse(url_name, kwargs=extra_kwargs),
-            "label": "Volver atrás",
-            "icon": "fas fa-chevron-left",
-            "color": "secondary",
+        # MEJORA: Usamos la nueva propiedad segura _base_request_uuid
+        if use_uuid and self._base_request_uuid:
+            extra_kwargs["uuid"] = self._base_request_uuid
+
+        return self._create_button(
+            href=reverse(url_name, kwargs=extra_kwargs),
+            label="Volver atrás",
+            icon="fas fa-chevron-left",
+            color="secondary",
+        )
+
+    # NUEVO: Una property que devuelve el UUID de forma segura o None
+    @property
+    def _base_request_uuid(self):
+        if hasattr(self, "base_request") and self.base_request:
+            return str(self.base_request.uuid)
+        return None
+
+    @property
+    def BUTTON_FACTORIES(self):
+        factories = {
+            "back_base": lambda self: self.get_back_button(
+                "operaciones:solicitud_base", use_uuid=False
+            ),
+            "back_selection": lambda self: self.get_back_button(
+                "operaciones:seleccion_tipo_operacion"
+            ),
+            "back_operations": lambda self: self.get_back_button(
+                "operaciones:lista_operaciones"
+            ),
+            "back_solicitudes": lambda self: self.get_back_button(
+                "operaciones:lista_solicitudes", use_uuid=False
+            ),
+            "new_base": lambda self: self._create_button(
+                href=reverse("operaciones:solicitud_base"),
+                label="Nueva Solicitud",
+                icon="fas fa-plus",
+            ),
         }
+
+        # Agregamos las fábricas dependientes del UUID solo si el UUID existe
+        if self._base_request_uuid:
+            factories.update(
+                {
+                    "new_operation": lambda self: self._create_button(
+                        href=reverse(
+                            "operaciones:seleccion_tipo_operacion",
+                            kwargs={"uuid": self._base_request_uuid},
+                        ),
+                        label="Nueva Operación",
+                        icon="fas fa-plus",
+                    ),
+                    "preview": lambda self: self._create_button(
+                        href=reverse(
+                            "operaciones:preview_operaciones",
+                            kwargs={"uuid": self._base_request_uuid},
+                        ),
+                        label="Revisar Solicitud",
+                        icon="fas fa-eye",
+                        color="success",
+                    ),
+                    "send": lambda self: self._create_button(
+                        id="enviarSolicitud",
+                        href=reverse(
+                            "operaciones:enviar_operaciones",
+                            kwargs={"uuid": self._base_request_uuid},
+                        ),
+                        label="Enviar Solicitud",
+                        icon="fas fa-paper-plane",
+                        color="success",
+                    ),
+                }
+            )
+        return factories
+
+    # --- Métodos principales ---
+
+    def get_header_buttons_config(self):
+        cfg = self.header_buttons_config
+        return cfg() if callable(cfg) else (cfg or [])
 
     def get_header_buttons(self):
         cfg = self.get_header_buttons_config()
         buttons = []
         for key in cfg:
             factory = self.BUTTON_FACTORIES.get(key)
+            # MEJORA: Si la fábrica no existe para esta vista (ej: no hay uuid), la saltea
             if not factory:
                 continue
+
             btn = factory(self)
+
+            # MEJORA: Si la fábrica devuelve None, también la saltea
+            if not btn:
+                continue
+
             cond = btn.get("condition")
             if cond is None or cond(self):
                 buttons.append(btn)
@@ -238,14 +278,19 @@ class DynamicModelMixin:
         )
 
 
-class DisallowAfterSentMixin:
+class EditableStateRequiredMixin:
     """
-    Bloquea cualquier dispatch si la solicitud ya fue enviada.
+    Bloquea el dispatch si la solicitud NO está en un estado editable
+    (Borrador o Rectificando).
     """
 
     def dispatch(self, request, *args, **kwargs):
-        if getattr(self, "base_request", None) and self.base_request.send_at:
-            messages.error(request, "No se puede modificar una solicitud ya enviada.")
+        # Asumimos que BaseRequestRequiredMixin ya se ejecutó y tenemos self.base_request
+        if hasattr(self, "base_request") and not self.base_request.is_editable:
+            messages.error(
+                request,
+                "Esta solicitud ya fue enviada y no se puede modificar a menos que se inicie una rectificación.",
+            )
             return redirect(
                 "operaciones:lista_operaciones", uuid=str(self.base_request.uuid)
             )
@@ -275,7 +320,7 @@ class OperationReadonlyViewMixin(StandaloneViewMixin, BaseRequestRequiredMixin):
 
 class OperationEditViewMixin(
     OperationReadonlyViewMixin,
-    DisallowAfterSentMixin,
+    EditableStateRequiredMixin,
 ):
     """Mixin para vistas de creación, edición y eliminación (bloquea tras envío)."""
 

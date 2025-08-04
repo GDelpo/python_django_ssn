@@ -3,7 +3,14 @@ Módulo principal de modelos que expone los modelos base y de operación.
 """
 
 from .base_model import BaseRequestModel
-from .choices import TipoEntrega, TipoEspecie, TipoOperacion, TipoTasa, TipoValuacion
+from .choices import (
+    EstadoSolicitud,
+    TipoEntrega,
+    TipoEspecie,
+    TipoOperacion,
+    TipoTasa,
+    TipoValuacion,
+)
 from .monthly_stock_model import (
     ChequePagoDiferidoStock,
     InversionStock,
@@ -34,4 +41,5 @@ __all__ = [
     "PlazoFijoStock",
     "ChequePagoDiferidoStock",
     "TipoStock",
+    "EstadoSolicitud",
 ]

@@ -1,4 +1,5 @@
 {% extends "forms/partials/_base_form.html" %}
+{% load component_tags %}
 {% block form_fields %}
   <div class="grid grid-cols-1 gap-6">
     {% for field in form %}
@@ -15,11 +16,11 @@
       {# 1) Si ya hay operaciones, muestro “Ver Operaciones” #}
       {% if value > 0 %}
         {% url 'operaciones:lista_operaciones' uuid=base_request.uuid as lista_url %}
-        {% include "componentes/link_button.html" with href=lista_url label="Ver Operaciones" icon="fas fa-list" color="warning" %}
+        {% link_button href=lista_url label="Ver Operaciones" icon="fas fa-list" color="warning" %}
       {# 2) Si NO hay operaciones y es Semanal, muestro “Enviar solicitud vacía” #}
       {% elif base_request.tipo_entrega == "Semanal" %}
         {% url 'operaciones:enviar_operaciones' uuid=base_request.uuid as empty_url %}
-        {% include "componentes/link_button.html" with href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud sin operaciones" icon="fas fa-paper-plane" color="warning" %}
+        {% link_button href=empty_url|add:'?empty=1' id="sendEmptyBtn" label="Enviar solicitud sin operaciones" icon="fas fa-paper-plane" color="warning" %}
       {% endif %}
     {% endif %}
   {% endfor %}

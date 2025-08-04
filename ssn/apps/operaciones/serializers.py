@@ -158,7 +158,7 @@ class BaseModelSerializer(CamelCaseModelSerializer):
 
     class Meta:
         model = BaseRequestModel
-        exclude = ["uuid", "send_at", "created_at"]
+        exclude = ["uuid", "send_at", "created_at", "updated_at", "estado"]
 
 
 def create_model_serializer(tipo_operacion):
