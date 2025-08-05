@@ -3,6 +3,9 @@
 {% block main_content_operaciones %}
   <div class="overflow-x-auto">
     {% block list_content %}{% endblock %}
+    {% if request.resolver_match.url_name == 'lista_solicitudes' %}
+      <small class="text-gray-800">* Las solicitudes <strong class="italic">"Enviadas"</strong> sin respuesta provienen de la plataforma anterior.</small>
+    {% endif %}
   </div>
 {% endblock %}
 
