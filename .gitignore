@@ -66,6 +66,8 @@ __pycache__/
 # .JSON files with sensitive information
 fixtures/
 
-# django-tailwind
+# Django Tailwind
 # Carpeta que contiene el binario descargado del CLI de Tailwind.
 .tailwindcss/
+# Carpeta que contiene los archivos para compilar los estilos en CSS. Modo de desarrollo.
+ssn/apps/theme/static/css/dist/styles.css
