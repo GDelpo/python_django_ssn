@@ -23,14 +23,17 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # 3. Copiar todo el contexto del proyecto.
-# Esto asegura que Tailwind pueda escanear todos los templates en busca de clases.
 COPY . .
 
-# 4. Establecer el directorio de trabajo y los settings para el build.
+# 4. Copiar y renombrar el archivo de entorno para el build.
+#    Esto crea el archivo .env que `decouple` buscará durante el build.
+COPY .env.build /build/.env
+
+# 5. Establecer el directorio de trabajo y los settings para el build.
 WORKDIR /build/ssn
 ENV DJANGO_SETTINGS_MODULE=config.settings.build
 
-# 5. Instalar, actualizar y compilar los estilos de Tailwind en una sola capa para eficiencia.
+# 6. Instalar, actualizar y compilar los estilos de Tailwind en una sola capa para eficiencia.
 #    - install: Descarga el CLI de Tailwind.
 #    - update: Actualiza el CLI a la última versión.
 #    - build: Genera el archivo CSS de producción, optimizado y purgado.
@@ -38,7 +41,7 @@ RUN python manage.py tailwind install && \
     python manage.py tailwind update && \
     python manage.py tailwind build
 
-# 6. Recolectar todos los archivos estáticos (incluyendo el CSS recién creado por Tailwind).
+# 7. Recolectar todos los archivos estáticos (incluyendo el CSS recién creado por Tailwind).
 RUN python manage.py collectstatic --noinput --clear
 
 
