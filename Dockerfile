@@ -77,7 +77,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 #    Esto mantiene la imagen final pequeña y sin herramientas de build.
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder --chown=python:python /build/static /app/static
+# Corregido: La ruta de origen ahora es /build/ssn/static para coincidir con el STATIC_ROOT de Django.
+COPY --from=builder --chown=python:python /build/ssn/static /app/static
 COPY --chown=python:python ./ssn /app/ssn
 COPY --chown=python:python entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
