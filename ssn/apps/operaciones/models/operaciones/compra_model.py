@@ -7,7 +7,7 @@ from .detalle_operacion_model import DetalleOperacionBase
 
 class CompraOperacion(BaseOperacionModel, DetalleOperacionBase):
     precio_compra = models.DecimalField(
-        max_digits=6, decimal_places=2, help_text="Precio de compra"
+        max_digits=8, decimal_places=2, help_text="Precio de compra"
     )
     solicitud = models.ForeignKey(
         "BaseRequestModel",
