@@ -68,7 +68,7 @@ class SsnService(metaclass=Singleton):
         data = {"user": self.username, "cia": self.cia, "password": self.password}
         token_url = f"{self.base_url}/login"
         try:
-            response = self.session.post(token_url, json=data, headers=headers)
+            response = self.session.post(token_url, json=data, headers=headers, verify=False)
             if response.status_code == HTTPStatus.OK:
                 token = response.json().get("token")
                 logger.debug("Token obtenido exitosamente.")
@@ -208,7 +208,7 @@ class SsnService(metaclass=Singleton):
             self._log_request_payload(kwargs)
 
             try:
-                response = request_func(url, **kwargs)
+                response = request_func(url, **kwargs, verify=False)
                 status_code = response.status_code
 
                 # Loggear la respuesta
