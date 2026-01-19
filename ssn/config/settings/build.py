@@ -3,6 +3,7 @@ SSN_API_USERNAME = "build_user"
 SSN_API_PASSWORD = "build_pass"
 SSN_API_CIA = "build_cia"
 SSN_API_BASE_URL = "https://build-example.com"
+SSN_API_ENABLED = False
 SECRET_KEY = "dummy_secret_for_build_purposes_only"
 
 # 2. Importar la configuración base DESPUÉS

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import Any, Callable, Dict, Optional, Tuple
 
+import certifi
 import jwt
 import requests
 from requests.exceptions import RequestException
@@ -68,7 +69,7 @@ class SsnService(metaclass=Singleton):
         data = {"user": self.username, "cia": self.cia, "password": self.password}
         token_url = f"{self.base_url}/login"
         try:
-            response = self.session.post(token_url, json=data, headers=headers, verify=False)
+            response = self.session.post(token_url, json=data, headers=headers, verify=certifi.where())
             if response.status_code == HTTPStatus.OK:
                 token = response.json().get("token")
                 logger.debug("Token obtenido exitosamente.")
@@ -208,7 +209,7 @@ class SsnService(metaclass=Singleton):
             self._log_request_payload(kwargs)
 
             try:
-                response = request_func(url, **kwargs, verify=False)
+                response = request_func(url, **kwargs, verify=certifi.where())
                 status_code = response.status_code
 
                 # Loggear la respuesta

@@ -19,6 +19,7 @@ XlsxWriter==3.2.3
 
 # Cliente HTTP para API
 requests==2.32.3
+certifi>=2024.0.0
 
 # Utilidades adicionales
 python-slugify==8.0.4

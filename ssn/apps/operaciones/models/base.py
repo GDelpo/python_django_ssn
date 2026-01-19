@@ -37,7 +37,60 @@ class BaseRequestModel(models.Model):
 
     @property
     def is_editable(self):
-        return self.estado in [EstadoSolicitud.BORRADOR, EstadoSolicitud.RECTIFICANDO]
+        """
+        Determina si la solicitud puede ser editada.
+        - BORRADOR: Aún no enviada, totalmente editable
+        - CARGADO: Enviada pero no confirmada, editable
+        - A_RECTIFICAR: Aprobada para rectificación, editable
+        - Deprecated: RECTIFICANDO (antiguo sistema)
+        """
+        return self.estado in [
+            EstadoSolicitud.BORRADOR,
+            EstadoSolicitud.CARGADO,
+            EstadoSolicitud.A_RECTIFICAR,
+            EstadoSolicitud.RECTIFICANDO,  # deprecated
+        ]
+
+    def sync_estado_con_ssn(self):
+        """
+        Sincroniza el estado local con el estado en la SSN.
+        Retorna True si hubo cambio de estado, False en caso contrario.
+        """
+        # Solo sincronizar estados que ya fueron enviados a SSN
+        if self.estado in [
+            EstadoSolicitud.BORRADOR,
+            EstadoSolicitud.ENVIADA,  # deprecated
+            EstadoSolicitud.RECTIFICANDO,  # deprecated
+        ]:
+            return False
+
+        from ssn_client.services import consultar_estado_ssn, EstadoSSN
+        import logging
+        
+        logger = logging.getLogger("operaciones")
+        estado_ssn, _, status = consultar_estado_ssn(self)
+
+        if status < 400 and estado_ssn:
+            # Mapear estado SSN a estado local
+            estado_local_mapping = {
+                EstadoSSN.VACIO: EstadoSolicitud.BORRADOR,
+                EstadoSSN.CARGADO: EstadoSolicitud.CARGADO,
+                EstadoSSN.PRESENTADO: EstadoSolicitud.PRESENTADO,
+                EstadoSSN.RECTIFICACION_PENDIENTE: EstadoSolicitud.RECTIFICACION_PENDIENTE,
+                EstadoSSN.A_RECTIFICAR: EstadoSolicitud.A_RECTIFICAR,
+            }
+
+            nuevo_estado = estado_local_mapping.get(estado_ssn)
+            if nuevo_estado and nuevo_estado != self.estado:
+                logger.info(
+                    f"Sincronizando estado de {self.uuid}: "
+                    f"{self.estado} -> {nuevo_estado} (SSN: {estado_ssn})"
+                )
+                self.estado = nuevo_estado
+                self.save()
+                return True
+        
+        return False
 
     def __str__(self):
         return f"Tipo de Entrega: {self.tipo_entrega} | Cronograma: {self.cronograma}"

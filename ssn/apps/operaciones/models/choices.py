@@ -2,9 +2,18 @@ from django.db import models
 
 
 class EstadoSolicitud(models.TextChoices):
+    # Estados locales de edición
     BORRADOR = "BORRADOR", "Borrador"
-    ENVIADA = "ENVIADA", "Enviada"
-    RECTIFICANDO = "RECTIFICANDO", "Rectificando"
+    
+    # Estados sincronizados con SSN API
+    CARGADO = "CARGADO", "Cargado (sin confirmar)"
+    PRESENTADO = "PRESENTADO", "Presentado"
+    RECTIFICACION_PENDIENTE = "RECTIFICACION_PENDIENTE", "Rectificación Pendiente"
+    A_RECTIFICAR = "A_RECTIFICAR", "Aprobado para Rectificar"
+    
+    # Estado deprecated - mantener por compatibilidad
+    ENVIADA = "ENVIADA", "Enviada (deprecated)"
+    RECTIFICANDO = "RECTIFICANDO", "Rectificando (deprecated)"
 
 
 class TipoEntrega(models.TextChoices):

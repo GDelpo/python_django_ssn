@@ -12,6 +12,12 @@ class SsnClientConfig(AppConfig):
     ssn_client = None
 
     def ready(self):
+        if not getattr(settings, "SSN_API_ENABLED", True):
+            logger.info(
+                "SSN client deshabilitado por configuracion (SSN_API_ENABLED=False)."
+            )
+            return
+
         has_credentials = (
             hasattr(settings, "SSN_API_USERNAME")
             and settings.SSN_API_USERNAME

@@ -16,7 +16,12 @@ from django.views.generic import (
     UpdateView,
 )
 from ssn_client.models import SolicitudResponse
-from ssn_client.services import enviar_y_guardar_solicitud
+from ssn_client.services import (
+    consultar_estado_ssn,
+    enviar_y_guardar_solicitud,
+    solicitar_rectificacion_ssn,
+)
+from ssn_client.services import EstadoSSN
 
 from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
 from .helpers import (
@@ -70,6 +75,10 @@ class SolicitudBaseCreateView(
             logger.debug(f"Intentando recuperar solicitud con UUID: {recover_uuid}")
             try:
                 base_instance = BaseRequestModel.objects.get(uuid=recover_uuid)
+
+                # Sincronizar estado con SSN al recuperar
+                self._sync_estado_ssn(base_instance)
+
                 SessionService.set_base_request(request, base_instance)
                 logger.debug(f"Solicitud {recover_uuid} recuperada.")
                 messages.success(request, "Solicitud recuperada exitosamente.")
@@ -85,8 +94,17 @@ class SolicitudBaseCreateView(
                 )
         return super().get(request, *args, **kwargs)
 
+    def _sync_estado_ssn(self, base_instance):
+        """
+        Sincroniza el estado de la solicitud con la SSN.
+        Delega al método del modelo para evitar duplicación de código.
+        """
+        base_instance.sync_estado_con_ssn()
+
     def form_valid(self, form):
         response = super().form_valid(form)
+        # No sincronizar al crear nuevas solicitudes en BORRADOR
+        # El estado se sincronizará solo cuando se envíe a SSN
         SessionService.set_base_request(self.request, self.object)
         return response
 
@@ -165,6 +183,26 @@ class OperacionListView(
     def get_breadcrumbs(self):
         return self.breadcrumbs
 
+    def get(self, request, *args, **kwargs):
+        """
+        Sincroniza el estado con SSN antes de mostrar la lista.
+        """
+        self._sync_estado_con_ssn()
+        return super().get(request, *args, **kwargs)
+
+    def _sync_estado_con_ssn(self):
+        """
+        Consulta el estado SSN y actualiza el estado local si es necesario.
+        """
+        cambio = self.base_request.sync_estado_con_ssn()
+        
+        # Si hubo cambio, notificar al usuario
+        if cambio:
+            messages.info(
+                self.request,
+                f"Estado actualizado: {self.base_request.get_estado_display()}",
+            )
+
     def get_queryset(self):
         return OperacionesService.get_all_operaciones(self.base_request)
 
@@ -201,19 +239,111 @@ class OperacionListView(
     def post(self, request, *args, **kwargs):
         """
         Maneja las acciones de Iniciar y Cancelar la rectificación.
+        Mantiene compatibilidad con flujo antiguo (ENVIADA -> RECTIFICANDO)
+        y agrega validaciones SSN para estados nuevos.
         """
         # --- Acción para INICIAR la rectificación ---
         if "rectify_action" in request.POST:
-            if not self.base_request.is_editable:
+            # Caso 1: Flujo legacy - ENVIADA sin confirmar en SSN aún
+            if self.base_request.estado == EstadoSolicitud.ENVIADA:
+                # Activar modo rectificación directamente (flujo antiguo)
                 self.base_request.estado = EstadoSolicitud.RECTIFICANDO
                 self.base_request.save()
                 messages.info(request, "Modo de rectificación activado.")
+                return redirect(request.path)
+
+            # Caso 2: Estados nuevos - validar con SSN
+            if self.base_request.estado in [
+                EstadoSolicitud.CARGADO,
+                EstadoSolicitud.PRESENTADO,
+                EstadoSolicitud.RECTIFICACION_PENDIENTE,
+                EstadoSolicitud.A_RECTIFICAR,
+            ]:
+                # Consultar estado SSN
+                estado_ssn, datos_ssn, status_consulta = consultar_estado_ssn(
+                    self.base_request
+                )
+
+                if status_consulta >= 400:
+                    msg = f"No se pudo verificar el estado en SSN: {datos_ssn.get('error', 'Error desconocido')}"
+                    messages.error(request, msg)
+                    return redirect(request.path)
+
+                # Si está PRESENTADO → Solicitar rectificación (siempre)
+                if estado_ssn == EstadoSSN.PRESENTADO:
+                    # Solicitar rectificación a la SSN
+                    response_data, status, _ = solicitar_rectificacion_ssn(
+                        self.base_request
+                    )
+
+                    if 200 <= status < 300:
+                        messages.success(
+                            request,
+                            "Solicitud de rectificación enviada exitosamente.",
+                        )
+                        messages.info(
+                            request,
+                            "Estado: RECTIFICACIÓN PENDIENTE. Deberá esperar a que la SSN apruebe "
+                            "para poder editar las operaciones.",
+                        )
+                    else:
+                        messages.error(
+                            request,
+                            f"Error al solicitar rectificación: {response_data.get('error', 'Error desconocido')}",
+                        )
+                    return redirect(request.path)
+
+                # Si está A_RECTIFICAR → Permitir edición
+                elif estado_ssn == EstadoSSN.A_RECTIFICAR:
+                    self.base_request.estado = EstadoSolicitud.A_RECTIFICAR
+                    self.base_request.save()
+                    messages.success(
+                        request,
+                        "Modo de rectificación activado. Puede editar las operaciones.",
+                    )
+
+                # Si está RECTIFICACION_PENDIENTE → No puede editar aún
+                elif estado_ssn == EstadoSSN.RECTIFICACION_PENDIENTE:
+                    messages.warning(
+                        request,
+                        "La rectificación está pendiente de aprobación por la SSN. "
+                        "No se puede editar hasta que sea aprobada.",
+                    )
+
+                # Si está CARGADO → Puede editar directamente
+                elif estado_ssn == EstadoSSN.CARGADO:
+                    self.base_request.estado = EstadoSolicitud.CARGADO
+                    self.base_request.save()
+                    messages.success(
+                        request,
+                        "Puede continuar editando. Los datos aún no están confirmados en SSN.",
+                    )
+
+                # Otros estados
+                else:
+                    messages.info(
+                        request,
+                        f"Estado actual en SSN: {estado_ssn}. No requiere rectificación.",
+                    )
 
         # --- Acción para CANCELAR la rectificación ---
         elif "cancel_rectify_action" in request.POST:
+            # Flujo legacy
             if self.base_request.estado == EstadoSolicitud.RECTIFICANDO:
                 OperacionesService.revert_new_operations(self.base_request)
                 self.base_request.estado = EstadoSolicitud.ENVIADA
+                self.base_request.save()
+                messages.success(
+                    request,
+                    "La rectificación ha sido cancelada y las operaciones nuevas fueron descartadas.",
+                )
+            # Estados nuevos
+            elif self.base_request.estado in [
+                EstadoSolicitud.A_RECTIFICAR,
+                EstadoSolicitud.CARGADO,
+            ]:
+                OperacionesService.revert_new_operations(self.base_request)
+                self.base_request.estado = EstadoSolicitud.PRESENTADO
                 self.base_request.save()
                 messages.success(
                     request,
@@ -224,13 +354,19 @@ class OperacionListView(
 
     def get_context_data(self, **kwargs):
         """
-        Añade la variable 'has_changes' al contexto si se está rectificando.
+        Añade la variable 'has_changes' al contexto para estados que lo requieren.
         """
         context = super().get_context_data(**kwargs)
-        if self.base_request.estado == EstadoSolicitud.RECTIFICANDO:
+        
+        # Agregar has_changes solo para estados de rectificación activa
+        if self.base_request.estado in [
+            EstadoSolicitud.RECTIFICANDO,
+            EstadoSolicitud.A_RECTIFICAR,
+        ]:
             context["has_changes"] = OperacionesService.has_changes_since_rectification(
                 self.base_request
             )
+        
         return context
 
 
@@ -531,6 +667,38 @@ class OperacionSendView(
             return redirect(
                 "operaciones:lista_operaciones", uuid=str(self.base_request.uuid)
             )
+
+        # 1) Consultar estado SSN antes de enviar
+        estado_ssn, datos_ssn, status_consulta = consultar_estado_ssn(
+            self.base_request
+        )
+
+        if status_consulta >= 400:
+            msg = f"No se pudo verificar el estado en SSN: {datos_ssn.get('error', 'Error desconocido')}"
+            messages.error(request, msg)
+            return redirect(
+                "operaciones:lista_operaciones", uuid=str(self.base_request.uuid)
+            )
+
+        # 2) Validar que el estado permita envío
+        estados_bloqueados = [
+            EstadoSSN.PRESENTADO,
+            EstadoSSN.RECTIFICACION_PENDIENTE,
+        ]
+
+        if estado_ssn in estados_bloqueados:
+            if estado_ssn == EstadoSSN.PRESENTADO:
+                msg = "La entrega ya está PRESENTADA. Para modificarla, primero debe solicitar una rectificación."
+            else:  # RECTIFICACION_PENDIENTE
+                msg = "Hay una rectificación pendiente de aprobación. No se puede enviar hasta que la SSN la apruebe."
+
+            messages.warning(request, msg)
+            messages.info(request, f"Estado actual en SSN: {estado_ssn}")
+            return redirect(
+                "operaciones:lista_operaciones", uuid=str(self.base_request.uuid)
+            )
+
+        # 3) Enviar normalmente si el estado lo permite (VACÍO, CARGADO, A_RECTIFICAR)
         response_data, status, _ = enviar_y_guardar_solicitud(
             self.base_request, operations, allow_empty=allow_empty
         )
