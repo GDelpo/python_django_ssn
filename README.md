@@ -315,6 +315,7 @@ Las principales variables de entorno que debes configurar:
 | `COMPANY_NAME` | Nombre de la compañía a mostrar en la aplicación. | `Tu Compania` |
 | `COMPANY_WEBSITE` | URL del sitio web oficial de la compañía. | `https://www.tu-compania.com` |
 | `COMPANY_LOGO_URL` | URL del logo de la compañía para usar en la aplicación. | `https://tu-compania_logo_negro.png` |
+| `COMPANY_FAVICON_URL` | URL del favicon de la compañía para la pestaña del navegador. | `https://www.tu-compania.com/favicon.ico` |
 
 ## 📋 Mantenimiento
 
