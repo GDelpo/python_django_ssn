@@ -4,23 +4,36 @@ def get_mapping_model():
 
     Returns:
         dict: Diccionario con códigos como claves y clases de modelo como valores.
-            'C': CompraOperacion
-            'V': VentaOperacion
-            'J': CanjeOperacion
-            'P': PlazoFijoOperacion
+            Semanales:
+                'C': CompraOperacion
+                'V': VentaOperacion
+                'J': CanjeOperacion
+                'P': PlazoFijoOperacion
+            Mensuales (Stocks):
+                'SI': InversionStock
+                'SP': PlazoFijoStock
+                'SC': ChequePagoDiferidoStock
     """
     from ..models import (
         CanjeOperacion,
         CompraOperacion,
         PlazoFijoOperacion,
         VentaOperacion,
+        InversionStock,
+        PlazoFijoStock,
+        ChequePagoDiferidoStock,
     )
 
     return {
+        # Operaciones semanales
         "C": CompraOperacion,
         "V": VentaOperacion,
         "J": CanjeOperacion,
         "P": PlazoFijoOperacion,
+        # Stocks mensuales
+        "SI": InversionStock,
+        "SP": PlazoFijoStock,
+        "SC": ChequePagoDiferidoStock,
     }
 
 

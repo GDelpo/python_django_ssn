@@ -25,10 +25,20 @@
       {% if show_icon %}<i class="fas fa-piggy-bank mr-1"></i>{% endif %}
       {{ valor|default:'Plazo Fijo' }}
     </span>
-  {% elif tipo == 'I' or tipo == 'inversion' %}
+  {% elif tipo == 'I' or tipo == 'inversion' or tipo == 'SI' %}
     <span class="{{ chip_classes }} bg-purple-100 text-purple-800">
       {% if show_icon %}<i class="fas fa-coins mr-1"></i>{% endif %}
       {{ valor|default:'Inversión' }}
+    </span>
+  {% elif tipo == 'SP' %}
+    <span class="{{ chip_classes }} bg-yellow-100 text-yellow-800">
+      {% if show_icon %}<i class="fas fa-piggy-bank mr-1"></i>{% endif %}
+      {{ valor|default:'Plazo Fijo' }}
+    </span>
+  {% elif tipo == 'SC' %}
+    <span class="{{ chip_classes }} bg-indigo-100 text-indigo-800">
+      {% if show_icon %}<i class="fas fa-money-check mr-1"></i>{% endif %}
+      {{ valor|default:'Cheque P.D.' }}
     </span>
   {% else %}
     <span class="{{ chip_classes }} bg-gray-100 text-gray-800">

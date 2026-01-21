@@ -1,0 +1,77 @@
+# =============================================================================
+# Docker Compose - Modo Standalone (sin Nginx incluido)
+# =============================================================================
+#
+# Usa este archivo cuando:
+# - El servidor ya tiene Nginx, Apache, Traefik u otro reverse proxy
+# - Querés manejar SSL/TLS externamente
+# - Necesitás integrar con una infraestructura existente
+#
+# Uso:
+#   docker compose -f docker-compose.standalone.yml up -d
+#
+# La aplicación expone el puerto 8000 (configurable via WEB_PORT)
+# Tu reverse proxy externo debe apuntar a http://localhost:${WEB_PORT}
+# =============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      args:
+        UID: ${LOCAL_UID:-1000}
+        GID: ${LOCAL_GID:-1000}
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # Expone el puerto para que el reverse proxy externo pueda conectarse
+      - "${WEB_HOST:-127.0.0.1}:${WEB_PORT:-8000}:8000"
+    volumes:
+      - media_volume:/app/ssn/media
+      - logs_volume:/app/ssn/logs
+      # Los archivos estáticos se montan en un directorio accesible
+      - static_volume:/app/static
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app/ssn
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+      # Indica que hay un proxy externo manejando SSL
+      - SECURE_PROXY_SSL_HEADER=HTTP_X_FORWARDED_PROTO,https
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "X-Forwarded-Proto: https", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - app_network
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 5s
+      retries: 5
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+  logs_volume:
+
+networks:
+  app_network:
+    driver: bridge

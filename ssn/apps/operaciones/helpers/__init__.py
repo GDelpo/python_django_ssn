@@ -1,6 +1,8 @@
 from .date_utils import (
     generate_monthly_options,
+    generate_monthly_options_with_overlap,
     generate_week_options,
+    generate_week_options_with_overlap,
     get_default_cronograma,
     get_last_week_id,
 )
@@ -17,7 +19,9 @@ from .text_utils import camel_to_title, to_camel_case
 
 __all__ = [
     "generate_monthly_options",
+    "generate_monthly_options_with_overlap",
     "generate_week_options",
+    "generate_week_options_with_overlap",
     "get_default_cronograma",
     "get_last_week_id",
     "comprobante_upload_path",

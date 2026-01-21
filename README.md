@@ -133,6 +133,52 @@ docker compose build --no-cache && docker compose up -d
 
 La aplicación estará disponible en https://'SSL_DOMAIN':'NGINX_PORT_HTTPS'" o "https://'SSL_IP':'NGINX_PORT_HTTPS'". Valores que debes configurar en tu archivo `.env`. Entonces, asegúrate de que el puerto NGINX esté libre y que el dominio o IP estén correctamente configurados.
 
+### Instalación Standalone (con reverse proxy externo)
+
+Si tu servidor ya tiene Nginx, Apache, Traefik u otro reverse proxy, podés usar el modo standalone que no incluye Nginx:
+
+1. **Clonar y configurar**
+
+```bash
+git clone git@github.com:GDelpo/python_django_ssn.git
+cd python_django_ssn
+cp .env-example .env # Editar .env con tus valores
+```
+
+2. **Agregar variables para modo standalone** en tu `.env`:
+
+```bash
+# Puerto donde expondrá la app (tu proxy apuntará aquí)
+WEB_PORT=8000
+# Bind solo a localhost por seguridad (el proxy se encarga del acceso externo)
+WEB_HOST=127.0.0.1
+```
+
+3. **Iniciar en modo standalone**
+
+```bash
+docker compose -f docker-compose.standalone.yml build --no-cache
+docker compose -f docker-compose.standalone.yml up -d
+```
+
+4. **Configurar tu reverse proxy externo**
+
+La app estará disponible en `http://127.0.0.1:8000`. Configurá tu proxy para redirigir a esta dirección.
+
+Ejemplos de configuración disponibles en `docs/`:
+- **Nginx**: [`docs/nginx-external.conf.example`](docs/nginx-external.conf.example)
+- **Apache**: [`docs/apache-external.conf.example`](docs/apache-external.conf.example)
+- **Traefik**: [`docs/traefik.example.yml`](docs/traefik.example.yml)
+
+> [!IMPORTANT]
+> Tu reverse proxy **debe** enviar el header `X-Forwarded-Proto: https` para que Django maneje correctamente las URLs seguras y CSRF.
+
+5. **Servir archivos estáticos y media**
+
+Para mejor rendimiento, configurá tu proxy para servir directamente:
+- `/static/` → Copiar archivos con: `docker compose -f docker-compose.standalone.yml exec web python /app/ssn/manage.py collectstatic`
+- `/media/` → Montar el volumen `media_volume` o copiar desde el contenedor
+
 ### Instalación local (desarrollo)
 
 1. **Clonar el repositorio**
@@ -215,13 +261,20 @@ python manage.py runserver
 ├── docker-compose.yml        # Configuración de servicios
 ├── entrypoint.sh             # Script de inicio para el contenedor web
 ├── nginx/                    # Configuración de Nginx
-│   ├── default.conf.template # Plantilla de configuración de Nginx
+│   └── default.conf.template # Plantilla de configuración de Nginx
 ├── nginx-entrypoint.sh       # Script de inicio para Nginx con certificados
 ├── requirements.txt          # Dependencias de Python
 └── ssn/                      # Código principal de la aplicación
     ├── manage.py
     ├── apps/                 # Aplicaciones de Django
     │   ├── operaciones/      # App principal de operaciones
+    │   │   ├── models/       # Modelos de datos
+    │   │   │   ├── base/     # Mixins y clases base (timestamps, solicitud, etc.)
+    │   │   │   ├── semanal/  # Operaciones semanales (compra, venta, canje, plazo fijo)
+    │   │   │   └── mensual/  # Stocks mensuales (inversión, plazo fijo, cheque PD)
+    │   │   ├── services/     # Lógica de negocio y servicios
+    │   │   ├── helpers/      # Utilidades (fechas, archivos, mixins de vistas)
+    │   │   └── management/   # Comandos de gestión (sync, limpieza)
     │   ├── ssn_client/       # Cliente para API de SSN
     │   └── theme/            # Configuración de Tailwind CSS y Templates base
     ├── logs/                 # Directorio para logs
@@ -350,6 +403,99 @@ python manage.py clean_preview_excels --hours 1
 >
 > Herramienta útil para probar la sintaxis: [crontab.guru](https://crontab.guru/)
 
+---
+
+### 🔹 Sincronización de datos históricos desde SSN
+
+El comando `sync_ssn_data` permite sincronizar datos históricos desde la API de la SSN a la base de datos local. Es útil para importar operaciones/stocks previamente presentados.
+
+**Opciones disponibles:**
+
+| Opción | Descripción |
+|--------|-------------|
+| `--period` | Tipo de período: `semanal` o `mensual` (requerido) |
+| `--year` | Año a sincronizar (default: año actual) |
+| `--dry-run` | Simula sin guardar en la base de datos |
+| `--force` | Sobrescribe registros existentes |
+| `--cronograma` | Sincroniza solo un cronograma específico (ej: `2025-15`) |
+
+**Desde contenedor Docker:**
+
+```bash
+# Sincronizar todas las semanas del 2025
+docker compose exec web python ssn/manage.py sync_ssn_data --period semanal --year 2025
+
+# Sincronizar datos mensuales del 2025 (modo prueba)
+docker compose exec web python ssn/manage.py sync_ssn_data --period mensual --year 2025 --dry-run
+
+# Sincronizar un cronograma específico, forzando actualización
+docker compose exec web python ssn/manage.py sync_ssn_data --period semanal --cronograma 2025-15 --force
+```
+
+**En entorno local de desarrollo:**
+
+```bash
+cd ssn
+python manage.py sync_ssn_data --period semanal --year 2025
+python manage.py sync_ssn_data --period mensual --year 2025 --dry-run
+```
+
+> [!NOTE]
+> Este comando requiere que las credenciales de la API SSN estén configuradas en las variables de entorno (`SSN_API_USERNAME`, `SSN_API_PASSWORD`, `SSN_API_CIA`, `SSN_API_BASE_URL`).
+
+---
+
+### 🔔 Sistema de Alertas de Vencimientos
+
+El sistema incluye alertas automáticas para recordar presentaciones pendientes:
+
+#### Alertas en la interfaz web
+
+Las alertas se muestran automáticamente en el header de la aplicación cuando hay presentaciones pendientes o vencidas:
+
+- **🔴 Rojo (Danger)**: Presentaciones vencidas que debieron presentarse
+- **🟡 Amarillo (Warning)**: Presentaciones próximas a vencer
+- **🔵 Azul (Info)**: Presentaciones pendientes con tiempo suficiente
+
+**Reglas de vencimiento:**
+- **Semanal**: Debe presentarse antes de que termine la semana siguiente (7 días después del cierre de la semana)
+- **Mensual**: Debe presentarse hasta el 5to día hábil del mes siguiente
+
+#### Alertas por email
+
+El comando `send_deadline_alerts` permite enviar recordatorios por email. Ideal para configurar como tarea cron diaria.
+
+**Opciones disponibles:**
+
+| Opción | Descripción |
+|--------|-------------|
+| `--dry-run` | Muestra alertas sin enviar emails |
+| `--level` | Nivel mínimo: `all`, `warning` (default), `danger` |
+| `--to` | Email destino (usa `ALERT_EMAIL_TO` por defecto) |
+
+**Desde contenedor Docker:**
+
+```bash
+# Ver alertas pendientes sin enviar email
+docker compose exec web python ssn/manage.py send_deadline_alerts --dry-run
+
+# Enviar solo alertas críticas (vencidas)
+docker compose exec web python ssn/manage.py send_deadline_alerts --level danger
+
+# Enviar a un email específico
+docker compose exec web python ssn/manage.py send_deadline_alerts --to alertas@empresa.com
+```
+
+**Configuración de cron recomendada:**
+
+```bash
+# Enviar alertas diariamente a las 8:00 AM
+0 8 * * * docker compose exec web python ssn/manage.py send_deadline_alerts
+```
+
+> [!NOTE]
+> Para envío de emails, configurar las variables de entorno de SMTP (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`) y `ALERT_EMAIL_TO` en el archivo `.env`.
+
 ## 🛡️ Seguridad
 
 Este repositorio está configurado para no incluir archivos con información sensible.  
@@ -359,7 +505,10 @@ Los archivos con datos sensibles no deben subirse a Git:
 
 ## ✏ TODOs
 
-- Generar presentación MENSUAL de operaciones a la SSN.
+- ~~Generar presentación MENSUAL de operaciones a la SSN.~~ ✅ Implementado
+- ~~Sincronización de datos históricos desde SSN.~~ ✅ Implementado (`sync_ssn_data`)
+- ~~Sistema de alertas de vencimientos en UI.~~ ✅ Implementado
+- ~~Alertas por email con `send_deadline_alerts`.~~ ✅ Implementado
 - Revisar APIS BYMA, para poder generar reportes, etc.
 - Organizar archivos Docker y Nginx en un directorio `docker/` para mayor claridad. Esto hace cambiar algunas rutas en el `docker-compose.yml` y en los archivos de configuración de Nginx.
 - Implementar directamente los trabajos cron en el contenedor web, para evitar depender del host. Esto permite que la limpieza de solicitudes y archivos temporales se realice automáticamente sin intervención manual. Se volvería completamente Docker nativo.

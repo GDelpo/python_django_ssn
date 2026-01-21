@@ -8,12 +8,16 @@ SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key-para-desarrol
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "web"]
 
 # --- Database ---
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db_dev.sqlite3",
+# En Docker usamos PostgreSQL (heredado de base), solo usar SQLite si se indica explícitamente
+USE_SQLITE = config("USE_SQLITE", default=False, cast=bool)
+if USE_SQLITE:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db_dev.sqlite3",
+        }
     }
-}
+# Si no, usa la configuración de PostgreSQL de base/database.py
 
 # Relajar seguridad para desarrollo
 CSRF_COOKIE_SECURE = False

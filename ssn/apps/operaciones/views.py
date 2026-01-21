@@ -23,7 +23,7 @@ from ssn_client.services import (
 )
 from ssn_client.services import EstadoSSN
 
-from .forms import BaseRequestForm, TipoOperacionForm, create_operacion_form
+from .forms import BaseRequestForm, SolicitudFilterForm, TipoOperacionForm, create_operacion_form
 from .helpers import (
     DynamicModelMixin,
     OperationEditViewMixin,
@@ -32,8 +32,13 @@ from .helpers import (
 )
 from .helpers.form_styles import disable_field
 from .helpers.text_utils import pretty_json
-from .models import BaseRequestModel, EstadoSolicitud
-from .services import OperacionesService, SessionService, SolicitudPreviewService
+from .models import BaseRequestModel, EstadoSolicitud, TipoEntrega
+from .services import (
+    OperacionesService,
+    SessionService,
+    SolicitudPreviewService,
+    MonthlyReportGeneratorService,
+)
 
 logger = logging.getLogger("operaciones")
 
@@ -56,19 +61,6 @@ class SolicitudBaseCreateView(
     ]
     success_message = "Solicitud base creada exitosamente."
 
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
-
-    def get_button_text(self):
-        return self.button_text
-
-    def get_header_buttons_config(self):
-        return self.header_buttons_config
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
-
     def get(self, request, *args, **kwargs):
         recover_uuid = request.GET.get("recover_uuid")
         if recover_uuid:
@@ -82,9 +74,16 @@ class SolicitudBaseCreateView(
                 SessionService.set_base_request(request, base_instance)
                 logger.debug(f"Solicitud {recover_uuid} recuperada.")
                 messages.success(request, "Solicitud recuperada exitosamente.")
-                return redirect(
-                    "operaciones:seleccion_tipo_operacion", uuid=base_instance.uuid
-                )
+                
+                # Redirigir según tipo: mensual a lista, semanal a selección
+                if base_instance.tipo_entrega == TipoEntrega.MENSUAL:
+                    return redirect(
+                        "operaciones:lista_operaciones", uuid=base_instance.uuid
+                    )
+                else:
+                    return redirect(
+                        "operaciones:seleccion_tipo_operacion", uuid=base_instance.uuid
+                    )
             except BaseRequestModel.DoesNotExist:
                 logger.warning(
                     f"Intento de recuperar UUID no existente: {recover_uuid}"
@@ -94,6 +93,24 @@ class SolicitudBaseCreateView(
                 )
         return super().get(request, *args, **kwargs)
 
+    def get_initial(self):
+        """Pre-setea valores desde parámetros GET (para alertas de vencimiento)."""
+        initial = super().get_initial()
+        
+        # Pre-setear tipo_entrega y cronograma desde GET
+        tipo_entrega = self.request.GET.get("tipo_entrega")
+        cronograma = self.request.GET.get("cronograma")
+        
+        if tipo_entrega:
+            initial["tipo_entrega"] = tipo_entrega
+            if cronograma:
+                if tipo_entrega == "Semanal":
+                    initial["cronograma_semanal"] = cronograma
+                elif tipo_entrega == "Mensual":
+                    initial["cronograma_mensual"] = cronograma
+        
+        return initial
+
     def _sync_estado_ssn(self, base_instance):
         """
         Sincroniza el estado de la solicitud con la SSN.
@@ -102,17 +119,65 @@ class SolicitudBaseCreateView(
         base_instance.sync_estado_con_ssn()
 
     def form_valid(self, form):
+        # La validación de datos para mensual ya se hace en el servicio de validación
+        # llamado desde form.clean(), así que aquí solo procesamos el guardado
+        
         response = super().form_valid(form)
         # No sincronizar al crear nuevas solicitudes en BORRADOR
         # El estado se sincronizará solo cuando se envíe a SSN
         SessionService.set_base_request(self.request, self.object)
+        
+        # Si es mensual, generar stocks automáticamente
+        if self.object.tipo_entrega == TipoEntrega.MENSUAL:
+            result = MonthlyReportGeneratorService.generate_monthly_stocks(self.object)
+            if result.success:
+                messages.success(
+                    self.request,
+                    f"Stocks generados automáticamente: {result.inversiones_count} inversiones, "
+                    f"{result.plazos_fijos_count} plazos fijos, {result.cheques_pd_count} cheques PD."
+                )
+                for warning in result.warnings:
+                    messages.warning(self.request, warning)
+            else:
+                messages.warning(
+                    self.request,
+                    f"No se pudieron generar stocks automáticamente: {result.message}"
+                )
+        
         return response
 
     def get_success_url(self):
-        return reverse(
-            "operaciones:seleccion_tipo_operacion",
-            kwargs={"uuid": str(self.object.uuid)},
-        )
+        # Semanal va a selección de tipo de operación
+        # Mensual va a lista de operaciones (stocks ya generados)
+        if self.object.tipo_entrega == TipoEntrega.MENSUAL:
+            return reverse(
+                "operaciones:lista_operaciones",
+                kwargs={"uuid": str(self.object.uuid)},
+            )
+        else:
+            return reverse(
+                "operaciones:seleccion_tipo_operacion",
+                kwargs={"uuid": str(self.object.uuid)},
+            )
+
+    def form_invalid(self, form):
+        """
+        Muestra los errores del formulario también como mensajes toast.
+        """
+        # Errores de campos específicos
+        for field, errors in form.errors.items():
+            for error in errors:
+                if field == "__all__":
+                    messages.error(self.request, error)
+                else:
+                    # Obtener el label del campo si existe
+                    field_label = form.fields.get(field, None)
+                    if field_label and hasattr(field_label, 'label'):
+                        messages.error(self.request, f"{field_label.label}: {error}")
+                    else:
+                        messages.error(self.request, error)
+        
+        return super().form_invalid(form)
 
 
 class SolicitudBaseListView(
@@ -131,20 +196,26 @@ class SolicitudBaseListView(
         ("Listado de Solicitudes", None),
     ]
 
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
-
-    def get_header_buttons_config(self):
-        return self.header_buttons_config
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
+    def get_filter_form(self):
+        """Crea el formulario de filtros con los años disponibles."""
+        # Obtener años únicos de las solicitudes existentes
+        anios = (
+            BaseRequestModel.objects.values_list("cronograma", flat=True)
+            .distinct()
+        )
+        anios_unicos = sorted(
+            set(c[:4] for c in anios if c), reverse=True
+        )
+        return SolicitudFilterForm(
+            self.request.GET or None, 
+            anios_disponibles=anios_unicos
+        )
 
     def get_queryset(self):
         SessionService.clear_base_request(self.request)
-        # Prefetch para evitar N+1 en respuestas, y annotate para el estado error
-        return (
+        
+        # Queryset base con prefetch y annotate
+        qs = (
             BaseRequestModel.objects.all()
             .prefetch_related("respuestas")
             .annotate(
@@ -156,6 +227,41 @@ class SolicitudBaseListView(
                 )
             )
         )
+
+        # Aplicar filtros desde GET params
+        tipo_entrega = self.request.GET.get("tipo_entrega")
+        estado = self.request.GET.get("estado")
+        anio = self.request.GET.get("anio")
+        orden = self.request.GET.get("orden", "-created_at")
+
+        if tipo_entrega:
+            qs = qs.filter(tipo_entrega=tipo_entrega)
+        
+        if estado:
+            qs = qs.filter(estado=estado)
+        
+        if anio:
+            qs = qs.filter(cronograma__startswith=anio)
+
+        # Aplicar ordenamiento
+        if orden:
+            qs = qs.order_by(orden)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["filter_form"] = self.get_filter_form()
+        # Orden actual para los encabezados de la tabla
+        context["current_orden"] = self.request.GET.get("orden", "-created_at")
+        # Preservar query params para paginación (sin page ni orden)
+        query_params = self.request.GET.copy()
+        if "page" in query_params:
+            del query_params["page"]
+        if "orden" in query_params:
+            del query_params["orden"]
+        context["query_params"] = query_params.urlencode()
+        return context
 
 
 class OperacionListView(
@@ -173,15 +279,13 @@ class OperacionListView(
         (lambda self: f"Solicitud {self.base_request.uuid}", None),
     ]
 
+
     # --- Métodos ---
     def get_title(self):
-        # Si está rectificando, podemos añadirlo al título para mayor claridad
-        if self.base_request.estado == EstadoSolicitud.RECTIFICANDO:
+        # Si está en modo rectificación, añadirlo al título
+        if self.base_request.estado == EstadoSolicitud.A_RECTIFICAR:
             return f"{self.title} (Rectificando)"
         return self.title
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
 
     def get(self, request, *args, **kwargs):
         """
@@ -208,20 +312,29 @@ class OperacionListView(
 
     def get_header_buttons_config(self):
         has_ops = bool(self.get_queryset())
+        is_monthly = self.base_request.tipo_entrega == TipoEntrega.MENSUAL
 
         if not self.base_request.is_editable:
-            # Para el estado ENVIADA, solo volver y previsualizar
+            # Para estados no editables (PRESENTADO, RECTIFICACION_PENDIENTE)
             return ["back_solicitudes", "preview"]
         else:
-            # Para BORRADOR y RECTIFICANDO
-            return ["back_solicitudes", "new_operation"] + (
-                ["preview"] if has_ops else []
-            )
+            # Para estados editables (BORRADOR, CARGADO, A_RECTIFICAR)
+            buttons = ["back_solicitudes"]
+            
+            # Para semanales, permitir agregar nuevas operaciones
+            if not is_monthly:
+                buttons.append("new_operation")
+            
+            # Agregar preview si hay operaciones/stocks
+            if has_ops:
+                buttons.append("preview")
+            
+            return buttons
 
     def get_header_buttons(self):
         buttons = super().get_header_buttons()
 
-        if self.base_request.estado == "RECTIFICANDO":
+        if self.base_request.estado == EstadoSolicitud.A_RECTIFICAR:
             has_changes = OperacionesService.has_changes_since_rectification(
                 self.base_request
             )
@@ -239,112 +352,91 @@ class OperacionListView(
     def post(self, request, *args, **kwargs):
         """
         Maneja las acciones de Iniciar y Cancelar la rectificación.
-        Mantiene compatibilidad con flujo antiguo (ENVIADA -> RECTIFICANDO)
-        y agrega validaciones SSN para estados nuevos.
+        
+        Flujo de rectificación:
+        1. PRESENTADO -> Solicitar rectificación a SSN -> RECTIFICACION_PENDIENTE
+        2. SSN aprueba -> A_RECTIFICAR (editable)
+        3. Usuario envía cambios -> PRESENTADO
         """
         # --- Acción para INICIAR la rectificación ---
         if "rectify_action" in request.POST:
-            # Caso 1: Flujo legacy - ENVIADA sin confirmar en SSN aún
-            if self.base_request.estado == EstadoSolicitud.ENVIADA:
-                # Activar modo rectificación directamente (flujo antiguo)
-                self.base_request.estado = EstadoSolicitud.RECTIFICANDO
-                self.base_request.save()
-                messages.info(request, "Modo de rectificación activado.")
+            # Consultar estado SSN actual
+            estado_ssn, datos_ssn, status_consulta = consultar_estado_ssn(
+                self.base_request
+            )
+
+            if status_consulta >= 400:
+                msg = f"No se pudo verificar el estado en SSN: {datos_ssn.get('error', 'Error desconocido')}"
+                messages.error(request, msg)
                 return redirect(request.path)
 
-            # Caso 2: Estados nuevos - validar con SSN
-            if self.base_request.estado in [
-                EstadoSolicitud.CARGADO,
-                EstadoSolicitud.PRESENTADO,
-                EstadoSolicitud.RECTIFICACION_PENDIENTE,
-                EstadoSolicitud.A_RECTIFICAR,
-            ]:
-                # Consultar estado SSN
-                estado_ssn, datos_ssn, status_consulta = consultar_estado_ssn(
+            # Si está PRESENTADO → Solicitar rectificación
+            if estado_ssn == EstadoSSN.PRESENTADO:
+                response_data, status, _ = solicitar_rectificacion_ssn(
                     self.base_request
                 )
 
-                if status_consulta >= 400:
-                    msg = f"No se pudo verificar el estado en SSN: {datos_ssn.get('error', 'Error desconocido')}"
-                    messages.error(request, msg)
-                    return redirect(request.path)
-
-                # Si está PRESENTADO → Solicitar rectificación (siempre)
-                if estado_ssn == EstadoSSN.PRESENTADO:
-                    # Solicitar rectificación a la SSN
-                    response_data, status, _ = solicitar_rectificacion_ssn(
-                        self.base_request
-                    )
-
-                    if 200 <= status < 300:
-                        messages.success(
-                            request,
-                            "Solicitud de rectificación enviada exitosamente.",
-                        )
-                        messages.info(
-                            request,
-                            "Estado: RECTIFICACIÓN PENDIENTE. Deberá esperar a que la SSN apruebe "
-                            "para poder editar las operaciones.",
-                        )
-                    else:
-                        messages.error(
-                            request,
-                            f"Error al solicitar rectificación: {response_data.get('error', 'Error desconocido')}",
-                        )
-                    return redirect(request.path)
-
-                # Si está A_RECTIFICAR → Permitir edición
-                elif estado_ssn == EstadoSSN.A_RECTIFICAR:
-                    self.base_request.estado = EstadoSolicitud.A_RECTIFICAR
-                    self.base_request.save()
+                if 200 <= status < 300:
                     messages.success(
                         request,
-                        "Modo de rectificación activado. Puede editar las operaciones.",
+                        "Solicitud de rectificación enviada exitosamente.",
                     )
-
-                # Si está RECTIFICACION_PENDIENTE → No puede editar aún
-                elif estado_ssn == EstadoSSN.RECTIFICACION_PENDIENTE:
-                    messages.warning(
-                        request,
-                        "La rectificación está pendiente de aprobación por la SSN. "
-                        "No se puede editar hasta que sea aprobada.",
-                    )
-
-                # Si está CARGADO → Puede editar directamente
-                elif estado_ssn == EstadoSSN.CARGADO:
-                    self.base_request.estado = EstadoSolicitud.CARGADO
-                    self.base_request.save()
-                    messages.success(
-                        request,
-                        "Puede continuar editando. Los datos aún no están confirmados en SSN.",
-                    )
-
-                # Otros estados
-                else:
                     messages.info(
                         request,
-                        f"Estado actual en SSN: {estado_ssn}. No requiere rectificación.",
+                        "Estado: RECTIFICACIÓN PENDIENTE. Deberá esperar a que la SSN apruebe "
+                        "para poder editar las operaciones.",
                     )
+                else:
+                    messages.error(
+                        request,
+                        f"Error al solicitar rectificación: {response_data.get('error', 'Error desconocido')}",
+                    )
+                return redirect(request.path)
 
-        # --- Acción para CANCELAR la rectificación ---
-        elif "cancel_rectify_action" in request.POST:
-            # Flujo legacy
-            if self.base_request.estado == EstadoSolicitud.RECTIFICANDO:
-                OperacionesService.revert_new_operations(self.base_request)
-                self.base_request.estado = EstadoSolicitud.ENVIADA
+            # Si está A_RECTIFICAR → Ya puede editar
+            elif estado_ssn == EstadoSSN.A_RECTIFICAR:
+                self.base_request.estado = EstadoSolicitud.A_RECTIFICAR
                 self.base_request.save()
                 messages.success(
                     request,
-                    "La rectificación ha sido cancelada y las operaciones nuevas fueron descartadas.",
+                    "Modo de rectificación activado. Puede editar las operaciones.",
                 )
-            # Estados nuevos
-            elif self.base_request.estado in [
+
+            # Si está RECTIFICACION_PENDIENTE → No puede editar aún
+            elif estado_ssn == EstadoSSN.RECTIFICACION_PENDIENTE:
+                self.base_request.estado = EstadoSolicitud.RECTIFICACION_PENDIENTE
+                self.base_request.save()
+                messages.warning(
+                    request,
+                    "La rectificación está pendiente de aprobación por la SSN. "
+                    "No se puede editar hasta que sea aprobada.",
+                )
+
+            # Si está CARGADO → Puede editar directamente
+            elif estado_ssn == EstadoSSN.CARGADO:
+                self.base_request.estado = EstadoSolicitud.CARGADO
+                self.base_request.save()
+                messages.success(
+                    request,
+                    "Puede continuar editando. Los datos aún no están confirmados en SSN.",
+                )
+
+            # Otros estados
+            else:
+                messages.info(
+                    request,
+                    f"Estado actual en SSN: {estado_ssn}. No requiere rectificación.",
+                )
+
+        # --- Acción para CANCELAR la rectificación ---
+        elif "cancel_rectify_action" in request.POST:
+            if self.base_request.estado in [
                 EstadoSolicitud.A_RECTIFICAR,
                 EstadoSolicitud.CARGADO,
             ]:
                 OperacionesService.revert_new_operations(self.base_request)
-                self.base_request.estado = EstadoSolicitud.PRESENTADO
-                self.base_request.save()
+                # Sincronizar estado con SSN para obtener el estado real
+                self.base_request.sync_estado_con_ssn()
                 messages.success(
                     request,
                     "La rectificación ha sido cancelada y las operaciones nuevas fueron descartadas.",
@@ -359,10 +451,7 @@ class OperacionListView(
         context = super().get_context_data(**kwargs)
         
         # Agregar has_changes solo para estados de rectificación activa
-        if self.base_request.estado in [
-            EstadoSolicitud.RECTIFICANDO,
-            EstadoSolicitud.A_RECTIFICAR,
-        ]:
+        if self.base_request.estado == EstadoSolicitud.A_RECTIFICAR:
             context["has_changes"] = OperacionesService.has_changes_since_rectification(
                 self.base_request
             )
@@ -387,17 +476,16 @@ class TipoOperacionSelectView(
     ]
 
     # --- Métodos ---
-    def get_title(self):
-        return self.title
-
-    def get_button_text(self):
-        return self.button_text
-
-    def get_header_buttons_config(self):
-        return self.header_buttons_config
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
+    def dispatch(self, request, *args, **kwargs):
+        """Bloquear acceso si la solicitud es mensual (redirigir a lista)."""
+        response = super().dispatch(request, *args, **kwargs)
+        if self.base_request.tipo_entrega == TipoEntrega.MENSUAL:
+            # Mensual no necesita seleccionar tipo, los stocks ya fueron generados
+            return redirect(
+                "operaciones:lista_operaciones",
+                uuid=self.base_request.uuid,
+            )
+        return response
 
     def form_valid(self, form):
         tipo = form.cleaned_data["tipo_operacion"]
@@ -432,19 +520,6 @@ class OperacionCreateView(
         ("Nueva Operación", None),
     ]
     success_message = "Operación creada correctamente."
-
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
-
-    def get_button_text(self):
-        return self.button_text
-
-    def get_header_buttons_config(self):
-        return self.header_buttons_config
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
 
     def dispatch(self, request, *args, **kwargs):
         self.tipo_operacion = kwargs.get("tipo_operacion")
@@ -482,16 +557,6 @@ class OperacionDetailView(
         ),
         ("Ver Detalle", None),
     ]
-
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
-
-    def get_header_buttons_config(self):
-        return self.header_buttons_config
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -536,19 +601,6 @@ class OperacionUpdateView(
     ]
     success_message = "Operación actualizada correctamente."
 
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
-
-    def get_button_text(self):
-        return self.button_text
-
-    def get_header_buttons_config(self):
-        return self.header_buttons_config
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
-
     def dispatch(self, request, *args, **kwargs):
         self.tipo_operacion = kwargs.get("tipo_operacion")
         return super().dispatch(request, *args, **kwargs)
@@ -584,19 +636,6 @@ class OperacionDeleteView(
         ("Eliminar Operación", None),
     ]
 
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
-
-    def get_button_text(self):
-        return self.button_text
-
-    def get_header_buttons_config(self):
-        return self.header_buttons_config
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
-
     def delete(self, request, *args, **kwargs):
         messages.success(request, "Operación eliminada correctamente.")
         return super().delete(request, *args, **kwargs)
@@ -615,10 +654,6 @@ class OperacionPreviewView(
     # --- Atributos configurables ---
     template_name = "preview.html"
     title = "Vista Previa de Solicitud"
-
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
 
     def get_header_buttons_config(self):
         return ["back_operations"] + (["send"] if self.base_request.is_editable else [])
@@ -654,10 +689,6 @@ class OperacionSendView(
 ):
     # --- Atributos configurables ---
     title = ""  # no aplica, no renderiza un card
-
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
 
     def get(self, request, *args, **kwargs):
         operations = OperacionesService.get_all_operaciones(self.base_request)
@@ -740,16 +771,6 @@ class SolicitudRespuestasListView(
         ("Detalle de Respuestas", None),
     ]
 
-    # --- Métodos ---
-    def get_title(self):
-        return self.title
-
-    def get_header_buttons_config(self):
-        return self.header_buttons_config
-
-    def get_breadcrumbs(self):
-        return self.breadcrumbs
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["respuestas"] = [
@@ -761,3 +782,112 @@ class SolicitudRespuestasListView(
             for resp in self.object.respuestas.all().order_by("created_at")
         ]
         return context
+
+
+# =============================================================================
+# VISTAS DE STOCKS MENSUALES
+# =============================================================================
+
+
+class MonthlyStockGenerateView(
+    OperationEditViewMixin,
+    TemplateView,
+):
+    """
+    Vista para generar automáticamente los stocks mensuales a partir del
+    stock del mes anterior y las operaciones semanales del mes.
+    """
+
+    # --- Atributos configurables ---
+    template_name = "mensual/generar_stocks.html"
+    title = "Generar Stocks Mensuales"
+    header_buttons_config = ["back_operations"]
+    breadcrumbs = [
+        ("Inicio", "theme:index"),
+        ("Solicitudes", "operaciones:lista_solicitudes"),
+        (
+            lambda self: f"Solicitud {self.base_request.uuid}",
+            "operaciones:lista_operaciones",
+            lambda self: {"uuid": self.base_request.uuid},
+        ),
+        ("Generar Stocks", None),
+    ]
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        # Validar que sea solicitud mensual
+        if self.base_request.tipo_entrega != TipoEntrega.MENSUAL:
+            messages.error(
+                request,
+                "Esta función solo está disponible para solicitudes mensuales."
+            )
+            return redirect(
+                "operaciones:lista_operaciones",
+                uuid=self.base_request.uuid,
+            )
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cronograma = self.base_request.cronograma
+
+        # Información del mes anterior
+        prev_request = MonthlyReportGeneratorService.get_previous_month_stock(cronograma)
+        context["prev_request"] = prev_request
+        context["prev_cronograma"] = MonthlyReportGeneratorService.get_previous_month_cronograma(cronograma)
+
+        # Semanas del mes
+        expected_weeks = MonthlyReportGeneratorService.get_weekly_cronogramas_for_month(cronograma)
+        weekly_requests = MonthlyReportGeneratorService.get_weekly_requests_for_month(cronograma)
+        missing_weeks = MonthlyReportGeneratorService.get_missing_weekly_requests(cronograma)
+
+        context["expected_weeks"] = expected_weeks
+        context["weekly_requests"] = weekly_requests
+        context["missing_weeks"] = missing_weeks
+        context["has_missing_weeks"] = bool(missing_weeks)
+
+        # Stocks existentes
+        existing_count = (
+            self.base_request.stocks_inversion_mensuales.count()
+            + self.base_request.stocks_plazofijo_mensuales.count()
+            + self.base_request.stocks_chequespd_mensuales.count()
+        )
+        context["existing_stocks_count"] = existing_count
+        context["can_generate"] = existing_count == 0
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """
+        Genera los stocks mensuales.
+        """
+        # Acción de generar
+        if "generate_action" in request.POST:
+            result = MonthlyReportGeneratorService.generate_monthly_stocks(
+                self.base_request
+            )
+
+            if result.success:
+                messages.success(request, result.message)
+                # Mostrar warnings si hay
+                for warning in result.warnings:
+                    messages.warning(request, warning)
+                # Redirigir a la lista de operaciones
+                return redirect(
+                    "operaciones:lista_operaciones",
+                    uuid=self.base_request.uuid,
+                )
+            else:
+                messages.error(request, result.message)
+
+        # Acción de eliminar stocks existentes
+        elif "delete_stocks_action" in request.POST:
+            count = MonthlyReportGeneratorService.delete_generated_stocks(
+                self.base_request
+            )
+            if count > 0:
+                messages.success(request, f"Se eliminaron {count} stocks.")
+            else:
+                messages.info(request, "No había stocks para eliminar.")
+
+        return redirect(request.path)

@@ -11,6 +11,7 @@ SSN_API_BASE_URL = config("SSN_API_BASE_URL")
 SSN_API_MAX_RETRIES = config("SSN_API_MAX_RETRIES", default=3, cast=int)
 SSN_API_RETRY_DELAY = config("SSN_API_RETRY_DELAY", default=5, cast=int)
 SSN_API_ENABLED = config("SSN_API_ENABLED", default=True, cast=bool)
+SSN_API_VERIFY_SSL = config("SSN_API_VERIFY_SSL", default=True, cast=bool)  # False para test con cert self-signed
 
 # --- Otras configuraciones ---
 PREVIEW_MAX_AGE_MINUTES = config("PREVIEW_MAX_AGE_MINUTES", default=5, cast=int)
@@ -28,4 +29,7 @@ COMPANY_NAME = config("COMPANY_NAME", default="Nombre Compañía")
 COMPANY_WEBSITE = config("COMPANY_WEBSITE", default="https://www.compania.com")
 COMPANY_LOGO_URL = config(
     "COMPANY_LOGO_URL", default="https://www.compania.com/logo.png"
+)
+COMPANY_FAVICON_URL = config(
+    "COMPANY_FAVICON_URL", default="https://www.compania.com/favicon.ico"
 )

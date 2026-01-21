@@ -200,6 +200,68 @@ def generate_monthly_options(year: int) -> Tuple[List[str], ...]:
     return tuple(options)
 
 
+def generate_week_options_with_overlap(year: int, overlap_weeks: int = 4) -> Tuple[List[str], ...]:
+    """
+    Generates weekly options for the current year plus the last N weeks of the previous year.
+    
+    This is useful during the transition period between years, when you need to
+    submit reports for the previous year's final weeks while already being in
+    the new year.
+
+    Args:
+        year: The current year for which to generate the calendar.
+        overlap_weeks: Number of weeks from the previous year to include (default: 4).
+
+    Returns:
+        A tuple of lists with week options, starting with the last weeks of 
+        the previous year followed by all weeks of the current year.
+    """
+    # Get the full calendar for the previous year
+    prev_year_calendar = list(generate_week_options(year - 1))
+    
+    # Get only the last N weeks from the previous year
+    prev_year_weeks = prev_year_calendar[-overlap_weeks:] if len(prev_year_calendar) >= overlap_weeks else prev_year_calendar
+    
+    # Get the full calendar for the current year
+    current_year_calendar = list(generate_week_options(year))
+    
+    # Combine: last weeks of prev year + all weeks of current year
+    combined_calendar = prev_year_weeks + current_year_calendar
+    
+    return tuple(combined_calendar)
+
+
+def generate_monthly_options_with_overlap(year: int, overlap_months: int = 2) -> Tuple[List[str], ...]:
+    """
+    Generates monthly options for the current year plus the last N months of the previous year.
+    
+    This is useful during the transition period between years, when you need to
+    submit reports for the previous year's final months while already being in
+    the new year.
+
+    Args:
+        year: The current year for which to generate the options.
+        overlap_months: Number of months from the previous year to include (default: 2).
+
+    Returns:
+        A tuple of lists with month options, starting with the last months of 
+        the previous year followed by all months of the current year.
+    """
+    # Get the full calendar for the previous year
+    prev_year_options = list(generate_monthly_options(year - 1))
+    
+    # Get only the last N months from the previous year
+    prev_year_months = prev_year_options[-overlap_months:] if len(prev_year_options) >= overlap_months else prev_year_options
+    
+    # Get the full calendar for the current year
+    current_year_options = list(generate_monthly_options(year))
+    
+    # Combine: last months of prev year + all months of current year
+    combined_options = prev_year_months + current_year_options
+    
+    return tuple(combined_options)
+
+
 def get_default_cronograma(tipo):
     """
     Devuelve el valor por defecto para el cronograma basado en el tipo.
@@ -225,3 +287,100 @@ def get_default_cronograma(tipo):
             prev_year = current_date.year
         return f"{prev_year}-{prev_month:02d}"
     return None
+
+
+# =============================================================================
+# Funciones de cálculo de días hábiles y feriados
+# =============================================================================
+
+# Feriados nacionales de Argentina (actualizar anualmente)
+# Formato: lista de tuplas (mes, día)
+FERIADOS_FIJOS = [
+    (1, 1),    # Año Nuevo
+    (3, 24),   # Día de la Memoria
+    (4, 2),    # Día del Veterano (Malvinas)
+    (5, 1),    # Día del Trabajador
+    (5, 25),   # Revolución de Mayo
+    (6, 20),   # Día de la Bandera
+    (7, 9),    # Día de la Independencia
+    (8, 17),   # Paso a la Inmortalidad del Gral. San Martín
+    (10, 12),  # Día del Respeto a la Diversidad Cultural
+    (11, 20),  # Día de la Soberanía Nacional
+    (12, 8),   # Inmaculada Concepción
+    (12, 25),  # Navidad
+]
+
+# Feriados móviles y especiales (se deben actualizar cada año)
+# Clave: año, Valor: lista de fechas adicionales
+FERIADOS_MOVILES = {
+    2025: [
+        datetime.date(2025, 3, 3),   # Carnaval
+        datetime.date(2025, 3, 4),   # Carnaval
+        datetime.date(2025, 4, 18),  # Viernes Santo
+    ],
+    2026: [
+        datetime.date(2026, 2, 16),  # Carnaval
+        datetime.date(2026, 2, 17),  # Carnaval
+        datetime.date(2026, 4, 3),   # Viernes Santo
+    ],
+}
+
+
+def es_feriado(fecha: datetime.date) -> bool:
+    """
+    Verifica si una fecha es feriado nacional.
+    
+    Args:
+        fecha: Fecha a verificar
+        
+    Returns:
+        True si es feriado, False en caso contrario
+    """
+    # Verificar feriados fijos
+    if (fecha.month, fecha.day) in FERIADOS_FIJOS:
+        return True
+    
+    # Verificar feriados móviles del año
+    feriados_año = FERIADOS_MOVILES.get(fecha.year, [])
+    return fecha in feriados_año
+
+
+def es_dia_habil(fecha: datetime.date) -> bool:
+    """
+    Verifica si una fecha es día hábil (no es fin de semana ni feriado).
+    
+    Args:
+        fecha: Fecha a verificar
+        
+    Returns:
+        True si es día hábil, False en caso contrario
+    """
+    # Lunes = 0, Domingo = 6
+    if fecha.weekday() >= 5:  # Sábado o Domingo
+        return False
+    
+    return not es_feriado(fecha)
+
+
+def calcular_quinto_dia_habil(año: int, mes: int) -> datetime.date:
+    """
+    Calcula el 5to día hábil de un mes dado.
+    
+    Args:
+        año: Año del mes
+        mes: Número del mes (1-12)
+        
+    Returns:
+        Fecha del 5to día hábil del mes
+    """
+    fecha = datetime.date(año, mes, 1)
+    dias_habiles = 0
+    
+    while dias_habiles < 5:
+        if es_dia_habil(fecha):
+            dias_habiles += 1
+            if dias_habiles == 5:
+                return fecha
+        fecha += datetime.timedelta(days=1)
+    
+    return fecha

@@ -33,11 +33,7 @@
               <td role="gridcell"class="px-4 py-3 md:table-cell block text-sm text-gray-700 text-center md:text-left"data-label="Tipo de operación">
                 <span class="font-semibold md:hidden block text-gray-500 text-xs mb-1 uppercase">Tipo de operación</span>
                 <div class="flex items-center justify-center md:justify-start">
-                  {% if base_request.tipo_entrega == 'Semanal' %} 
-                    {% include "lists/partials/_tipo_chip.html" with tipo=op.tipo_operacion valor=op.get_tipo_operacion_display show_icon=True %} 
-                  {% else %} 
-                    {% include "lists/partials/_tipo_chip.html" with tipo=op.tipo valor=op.get_tipo_display show_icon=True %} 
-                  {% endif %}
+                  {% include "lists/partials/_tipo_chip.html" with tipo=op.tipo_operacion valor=op.get_tipo_operacion_display show_icon=True %}
                 </div>
               </td>
               <td role="gridcell" class="px-4 py-3 md:table-cell block text-sm text-gray-700 whitespace-nowrap text-center md:text-left" data-label="Fecha movimiento">
@@ -102,12 +98,19 @@
               <td role="gridcell" colspan="6" class="px-4 py-8 text-center text-gray-500 md:table-cell">
                 <div class="flex flex-col items-center justify-center">
                   <i class="fas fa-inbox text-gray-300 text-4xl mb-4"></i>
-                  <p class="text-gray-500">No se han registrado operaciones.</p>
-                  {% if base_request.is_editable %}
-                    <p class="text-gray-500 mt-2">Para empezar, crea una nueva operación.</p>
-                    {% url 'operaciones:seleccion_tipo_operacion' uuid=base_request.uuid as create_url %}
-                    {% link_button href=create_url label="Crear nueva operación" icon="fas fa-plus" color="primary" %}
-                    {% if base_request.tipo_entrega == "Semanal" %}
+                  {% if base_request.tipo_entrega == "Mensual" %}
+                    {# Caso mensual sin stocks #}
+                    <p class="text-gray-500">No se generaron stocks para este período.</p>
+                    <p class="text-gray-500 mt-2">
+                      Esto puede deberse a que no existe stock del mes anterior ni operaciones semanales.
+                    </p>
+                  {% else %}
+                    {# Caso semanal sin operaciones #}
+                    <p class="text-gray-500">No se han registrado operaciones.</p>
+                    {% if base_request.is_editable %}
+                      <p class="text-gray-500 mt-2">Para empezar, crea una nueva operación.</p>
+                      {% url 'operaciones:seleccion_tipo_operacion' uuid=base_request.uuid as create_url %}
+                      {% link_button href=create_url label="Crear nueva operación" icon="fas fa-plus" color="primary" %}
                       <p class="text-gray-500 mt-2">
                         Si no hubo movimientos, podés enviar la solicitud sin operaciones.
                       </p>

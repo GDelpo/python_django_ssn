@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    MonthlyStockGenerateView,
     OperacionCreateView,
     OperacionDeleteView,
     OperacionDetailView,
@@ -71,4 +72,13 @@ urlpatterns = [
     ),
     # Listado de todas las solicitudes base
     path("", SolicitudBaseListView.as_view(), name="lista_solicitudes"),
+    # =========================================================================
+    # RUTAS PARA STOCKS MENSUALES
+    # =========================================================================
+    # Generar stocks mensuales automáticamente
+    path(
+        "<uuid:uuid>/mensual/generar/",
+        MonthlyStockGenerateView.as_view(),
+        name="generar_stocks_mensuales",
+    ),
 ]

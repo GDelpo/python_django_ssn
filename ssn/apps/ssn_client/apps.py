@@ -46,6 +46,7 @@ class SsnClientConfig(AppConfig):
                 base_url=settings.SSN_API_BASE_URL,
                 max_retries=settings.SSN_API_MAX_RETRIES,
                 retry_delay=settings.SSN_API_RETRY_DELAY,
+                verify_ssl=getattr(settings, "SSN_API_VERIFY_SSL", True),
             )
             logger.info("Cliente SSN inicializado exitosamente.")
         except Exception as e:

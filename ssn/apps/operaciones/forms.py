@@ -8,13 +8,15 @@ from .helpers import (
     CLASS_SELECT,
     apply_tailwind_style,
     disable_field,
-    generate_monthly_options,
-    generate_week_options,
+    generate_monthly_options_with_overlap,
+    generate_week_options_with_overlap,
     get_default_cronograma,
     get_last_week_id,
     get_mapping_model,
 )
 from .models import BaseRequestModel, DetalleOperacionCanje, TipoOperacion
+from .models.choices import EstadoSolicitud, TipoEntrega
+from .services import SolicitudValidationService
 
 # Configuración del logger
 logger = logging.getLogger("operaciones")
@@ -36,7 +38,7 @@ class BaseRequestForm(forms.ModelForm):
                 "id": "cronograma_semanal",
             }
         ),
-        choices=generate_week_options(datetime.date.today().year),
+        choices=generate_week_options_with_overlap(datetime.date.today().year),
         required=False,
     )
     cronograma_mensual = forms.ChoiceField(
@@ -48,7 +50,7 @@ class BaseRequestForm(forms.ModelForm):
                 "id": "cronograma_mensual",
             }
         ),
-        choices=generate_monthly_options(datetime.date.today().year),
+        choices=generate_monthly_options_with_overlap(datetime.date.today().year),
         required=False,
     )
 
@@ -91,6 +93,8 @@ class BaseRequestForm(forms.ModelForm):
         Raises:
             ValidationError: Si no se selecciona un cronograma válido
         """
+        logger.info("=== INICIO BaseRequestForm.clean() ===")
+        
         cleaned_data = super().clean()
         tipo_entrega = cleaned_data.get("tipo_entrega")
 
@@ -108,7 +112,6 @@ class BaseRequestForm(forms.ModelForm):
         # Manejar el caso en que seleccionado sea una lista
         if isinstance(seleccionado, list):
             seleccionado = seleccionado[0]
-            logger.debug(f"Selección múltiple convertida a valor único: {seleccionado}")
 
         # Validar que se haya seleccionado un cronograma
         if not seleccionado:
@@ -117,26 +120,32 @@ class BaseRequestForm(forms.ModelForm):
                 "Debe seleccionar un cronograma según el tipo de entrega."
             )
 
-        # Validar si ya existe un cronograma con el mismo valor
-        qs = BaseRequestModel.objects.filter(
-            cronograma=seleccionado, tipo_entrega=tipo_entrega
-        )
-        if self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
-        if qs.exists():
-            logger.warning(
-                f"Ya existe una solicitud con tipo_entrega='{tipo_entrega}' y cronograma='{seleccionado}'."
+        # Usar el servicio de validación centralizado
+        is_new_instance = self.instance._state.adding
+        exclude_pk = None if is_new_instance else self.instance.pk
+        
+        # Solo validar completamente para nuevas instancias
+        if is_new_instance:
+            validation_errors = SolicitudValidationService.validate_new_solicitud(
+                cronograma=seleccionado,
+                tipo_entrega=tipo_entrega,
+                exclude_pk=exclude_pk,
             )
-            if tipo_entrega == "Mensual":
-                self.add_error(
-                    "cronograma_mensual",
-                    "Ya existe una solicitud mensual para este cronograma.",
-                )
-            else:
-                self.add_error(
-                    "cronograma_semanal",
-                    "Ya existe una solicitud semanal para este cronograma.",
-                )
+            
+            for error in validation_errors:
+                if error.field_name:
+                    self.add_error(error.field_name, error.error_message)
+                else:
+                    raise forms.ValidationError(error.error_message)
+        else:
+            # Para ediciones, solo validar duplicados
+            result = SolicitudValidationService.validate_no_duplicate(
+                cronograma=seleccionado,
+                tipo_entrega=tipo_entrega,
+                exclude_pk=exclude_pk,
+            )
+            if not result.is_valid:
+                self.add_error(result.field_name, result.error_message)
 
         # Guardar el cronograma en los datos validados
         cleaned_data["cronograma"] = seleccionado
@@ -226,6 +235,10 @@ def create_operacion_form(tipo_operacion):
     if tipo_operacion == "J":
         meta_options["exclude"] = ["detalle_a", "detalle_b"]
         logger.debug("Configurando formulario para canje (J) con exclusión de detalles")
+    elif tipo_operacion in ["SI", "SP", "SC"]:
+        # Stocks mensuales - excluir campos de relación
+        meta_options["exclude"] = ["solicitud"]
+        logger.debug(f"Configurando formulario para stock mensual tipo: {tipo_operacion}")
     else:
         meta_options["exclude"] = ["solicitud"]
         logger.debug(f"Configurando formulario estándar para tipo: {tipo_operacion}")
@@ -372,3 +385,80 @@ def create_operacion_form(tipo_operacion):
 
     logger.debug(f"Formulario dinámico creado exitosamente para tipo: {tipo_operacion}")
     return DynamicOperacionForm
+
+
+class SolicitudFilterForm(forms.Form):
+    """
+    Formulario para filtrar y ordenar la lista de solicitudes.
+    """
+
+    ORDEN_CHOICES = [
+        ("-created_at", "Más recientes primero"),
+        ("created_at", "Más antiguos primero"),
+        ("cronograma", "Cronograma (A-Z)"),
+        ("-cronograma", "Cronograma (Z-A)"),
+        ("tipo_entrega", "Tipo de entrega (A-Z)"),
+        ("-tipo_entrega", "Tipo de entrega (Z-A)"),
+    ]
+
+    tipo_entrega = forms.ChoiceField(
+        label="Tipo de Entrega",
+        required=False,
+        choices=[("", "Todos")] + list(TipoEntrega.choices),
+        widget=forms.Select(
+            attrs={
+                "class": CLASS_SELECT,
+                "data-field-type": "select",
+            }
+        ),
+    )
+
+    estado = forms.ChoiceField(
+        label="Estado",
+        required=False,
+        choices=[("", "Todos")] + list(EstadoSolicitud.choices),
+        widget=forms.Select(
+            attrs={
+                "class": CLASS_SELECT,
+                "data-field-type": "select",
+            }
+        ),
+    )
+
+    anio = forms.ChoiceField(
+        label="Año",
+        required=False,
+        widget=forms.Select(
+            attrs={
+                "class": CLASS_SELECT,
+                "data-field-type": "select",
+            }
+        ),
+    )
+
+    orden = forms.ChoiceField(
+        label="Ordenar por",
+        required=False,
+        choices=ORDEN_CHOICES,
+        initial="-created_at",
+        widget=forms.Select(
+            attrs={
+                "class": CLASS_SELECT,
+                "data-field-type": "select",
+            }
+        ),
+    )
+
+    def __init__(self, *args, anios_disponibles=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Generar opciones de año dinámicamente
+        if anios_disponibles:
+            self.fields["anio"].choices = [("", "Todos")] + [
+                (str(anio), str(anio)) for anio in anios_disponibles
+            ]
+        else:
+            # Default: años desde 2024 hasta el actual
+            current_year = datetime.date.today().year
+            self.fields["anio"].choices = [("", "Todos")] + [
+                (str(y), str(y)) for y in range(current_year, 2023, -1)
+            ]

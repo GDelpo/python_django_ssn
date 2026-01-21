@@ -148,6 +148,15 @@ class HeaderButtonsMixin:
                         icon="fas fa-paper-plane",
                         color="success",
                     ),
+                    "generate_stocks": lambda self: self._create_button(
+                        href=reverse(
+                            "operaciones:generar_stocks_mensuales",
+                            kwargs={"uuid": self._base_request_uuid},
+                        ),
+                        label="Generar Stocks",
+                        icon="fas fa-magic",
+                        color="warning",
+                    ),
                 }
             )
         return factories

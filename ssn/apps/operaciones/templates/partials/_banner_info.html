@@ -1,7 +1,12 @@
 {% comment %}
-  Este partial muestra un banner contextual según el estado de la solicitud.
-  ADAPTADO para respetar el estilo de tarjeta "glassmorphism" existente.
-  Soporta estados legacy (ENVIADA, RECTIFICANDO) y nuevos estados SSN.
+  Banner contextual según el estado de la solicitud.
+  
+  Estados SSN soportados:
+  - BORRADOR: Creado localmente, aún no enviado
+  - CARGADO: Enviado a SSN sin confirmar (editable)
+  - PRESENTADO: Confirmado en SSN (solicitar rectificación para editar)
+  - RECTIFICACION_PENDIENTE: Esperando aprobación de SSN
+  - A_RECTIFICAR: SSN aprobó, puede editar y reenviar
 {% endcomment %}
 {% if base_request %}
   {# --- Banner para PRESENTADO (confirmado en SSN) --- #}
@@ -159,107 +164,5 @@
       </div>
     </div>
 
-  {# --- Banner para el estado ENVIADA (legacy) --- #}
-  {% elif base_request.estado == 'ENVIADA' %}
-    {% url 'operaciones:lista_operaciones' uuid=base_request.uuid as rectify_action_url %}
-    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-6">
-      <div class="px-6 py-4 bg-gradient-to-r from-blue-100 to-transparent border-b border-blue-100 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-        
-        <div class="w-full sm:w-4/5 min-w-0 text-center sm:text-left">
-          <div class="flex flex-col sm:flex-row items-center gap-6">
-            <div class="flex-shrink-0">
-              <i class="fas fa-paper-plane text-3xl text-blue-700"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-blue-800 text-base">Solicitud Enviada</h3>
-              <p class="text-sm text-blue-700 mt-1 text-pretty">
-                Recibida el <strong>{{ base_request.send_at|date:"d/m/Y" }}</strong>. Puedes rectificarla si encuentras algún error.
-              </p>
-              {% if base_request.respuestas.first %}
-                {% url 'operaciones:solicitud_respuesta' uuid=base_request.uuid as resp_url %}
-                <div class="mt-2">
-                  <a href="{{ resp_url }}" class="inline-flex items-center gap-2 text-sm font-semibold bg-green-100 text-green-700 hover:bg-green-200 rounded-full px-3 py-1 transition-colors">
-                    <i class="fas fa-check-circle"></i>
-                    <span>Ver Respuesta</span>
-                  </a>
-                </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-
-        <div class="w-full sm:w-1/5 mt-4 sm:mt-0">
-          <div class="flex justify-center sm:justify-end">
-            {# La acción siempre apunta a la lista de operaciones, que es la que tiene el método POST #}
-            <form method="POST" action="{{ rectify_action_url }}" class="w-full sm:w-auto">
-              {% csrf_token %}
-              <input type="hidden" name="rectify_action" value="1">
-              {% include "componentes/button.html" with type="submit" label="Rectificar" icon="fas fa-edit" color="primary" %}
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  {# --- Banner para el estado RECTIFICANDO --- #}
-  {% elif base_request.estado == 'RECTIFICANDO' %}
-    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-6">
-      <div class="px-6 py-4 bg-gradient-to-r from-yellow-100 to-transparent border-b border-yellow-200 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-        
-        <div class="w-full sm:w-4/5 min-w-0 text-center sm:text-left">
-          <div class="flex flex-col sm:flex-row items-center gap-6">
-            <div class="flex-shrink-0">
-              <i class="fas fa-pencil-alt text-3xl text-yellow-800"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-yellow-800 text-base">Modo de Edición</h3>
-              <p class="text-sm text-yellow-700 mt-1 text-pretty">
-                Estás rectificando la solicitud. <strong>Guarda los cambios al finalizar.</strong>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="w-full sm:w-1/5 mt-4 sm:mt-0">
-          <div class="flex justify-center sm:justify-end">
-            
-            {# --- Lógica Condicional para el botón --- #}
-            {% if request.resolver_match.url_name == 'lista_operaciones' %}
-              {# Si estamos en la lista, mostramos el botón de cancelar real #}
-              {% url 'operaciones:lista_operaciones' uuid=base_request.uuid as cancel_action_url %}
-              <form id="cancelRectifyForm" method="POST" action="{{ cancel_action_url }}" class="w-full sm:w-auto">
-                {% csrf_token %}
-                <input type="hidden" name="cancel_rectify_action" value="1">
-                {% include "componentes/button.html" with type="submit" label="Cancelar" icon="fas fa-times" color="danger" %}
-              </form>
-            {% else %}
-              {# Si estamos en otra página (un form), mostramos un botón para volver #}
-              {% url 'operaciones:lista_operaciones' uuid=base_request.uuid as list_url %}
-              {% include "componentes/link_button.html" with href=list_url label="Volver al Listado" icon="fas fa-chevron-left" color="secondary" %}
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    {# El script solo se necesita si el botón de cancelar real está presente #}
-    {% if request.resolver_match.url_name == 'lista_operaciones' %}
-      <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          const cancelForm = document.getElementById('cancelRectifyForm');
-          if (cancelForm) {
-            cancelForm.addEventListener('submit', function(event) {
-              const hasChanges = {{ has_changes|yesno:"true,false" }};
-              if (hasChanges) {
-                const confirmed = confirm("Se han detectado cambios. ¿Estás seguro de que quieres cancelar y perderlos?");
-                if (!confirmed) {
-                  event.preventDefault();
-                }
-              }
-            });
-          }
-        });
-      </script>
-    {% endif %}
   {% endif %}
 {% endif %}

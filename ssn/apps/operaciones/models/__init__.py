@@ -1,8 +1,13 @@
 """
 Módulo principal de modelos que expone los modelos base y de operación.
+
+Estructura:
+- base/: Clases base abstractas y mixins
+- semanal/: Operaciones semanales (Compra, Venta, Canje, Plazo Fijo)
+- mensual/: Stocks mensuales (Inversión, Plazo Fijo, Cheque PD)
 """
 
-from .base_model import BaseRequestModel
+# Choices
 from .choices import (
     EstadoSolicitud,
     TipoEntrega,
@@ -10,36 +15,49 @@ from .choices import (
     TipoOperacion,
     TipoTasa,
     TipoValuacion,
-)
-from .monthly_stock_model import (
-    ChequePagoDiferidoStock,
-    InversionStock,
-    PlazoFijoStock,
     TipoStock,
 )
-from .operaciones import (
-    CanjeOperacion,
+
+# Modelo de solicitud base
+from .base import BaseRequestModel
+
+# Operaciones semanales
+from .semanal import (
     CompraOperacion,
-    DetalleOperacionCanje,
-    PlazoFijoOperacion,
     VentaOperacion,
+    CanjeOperacion,
+    PlazoFijoOperacion,
+    DetalleOperacionCanje,
 )
 
+# Stocks mensuales
+from .mensual import (
+    InversionStock,
+    PlazoFijoStock,
+    ChequePagoDiferidoStock,
+)
+
+
 __all__ = [
+    # Choices
+    "EstadoSolicitud",
+    "TipoEntrega",
+    "TipoEspecie",
+    "TipoOperacion",
+    "TipoTasa",
+    "TipoValuacion",
+    "TipoStock",
+    # Base
     "BaseRequestModel",
+    # Semanales
     "CompraOperacion",
     "VentaOperacion",
     "CanjeOperacion",
     "PlazoFijoOperacion",
-    "TipoEspecie",
-    "TipoOperacion",
-    "TipoValuacion",
-    "TipoEntrega",
     "DetalleOperacionCanje",
-    "TipoTasa",
+    # Mensuales
     "InversionStock",
     "PlazoFijoStock",
     "ChequePagoDiferidoStock",
-    "TipoStock",
-    "EstadoSolicitud",
 ]
+

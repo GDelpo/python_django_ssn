@@ -2,7 +2,17 @@ from django.db import models
 
 
 class EstadoSolicitud(models.TextChoices):
-    # Estados locales de edición
+    """
+    Estados de una solicitud en el sistema.
+    
+    Flujo de estados:
+    1. BORRADOR -> Usuario crea cronograma (editable)
+    2. CARGADO -> Enviado a SSN sin confirmar (editable) 
+    3. PRESENTADO -> Confirmado en SSN (no editable, puede solicitar rectificación)
+    4. RECTIFICACION_PENDIENTE -> Esperando aprobación de SSN (no editable)
+    5. A_RECTIFICAR -> SSN aprobó rectificación (editable)
+    """
+    # Estado inicial - cronograma creado localmente
     BORRADOR = "BORRADOR", "Borrador"
     
     # Estados sincronizados con SSN API
@@ -10,10 +20,6 @@ class EstadoSolicitud(models.TextChoices):
     PRESENTADO = "PRESENTADO", "Presentado"
     RECTIFICACION_PENDIENTE = "RECTIFICACION_PENDIENTE", "Rectificación Pendiente"
     A_RECTIFICAR = "A_RECTIFICAR", "Aprobado para Rectificar"
-    
-    # Estado deprecated - mantener por compatibilidad
-    ENVIADA = "ENVIADA", "Enviada (deprecated)"
-    RECTIFICANDO = "RECTIFICANDO", "Rectificando (deprecated)"
 
 
 class TipoEntrega(models.TextChoices):
@@ -45,3 +51,9 @@ class TipoEspecie(models.TextChoices):
 class TipoTasa(models.TextChoices):
     FIJA = "F", "Fija"
     VARIABLE = "V", "Variable"
+
+
+class TipoStock(models.TextChoices):
+    INVERSION = "I", "Inversión"
+    PLAZO_FIJO = "P", "Plazo Fijo"
+    CHEQUE_PD = "C", "Cheque Pago Diferido"

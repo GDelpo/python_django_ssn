@@ -40,6 +40,7 @@ class SsnService(metaclass=Singleton):
         max_retries: int = 3,
         retry_delay: int = 2,
         token_refresh_margin: int = 300,  # 5 minutos en segundos
+        verify_ssl: bool = True,  # Verificación SSL (False para entornos de test con cert self-signed)
     ) -> None:
         # Evita re-inicializar la instancia si ya fue creada.
         if hasattr(self, "_initialized") and self._initialized:
@@ -52,6 +53,7 @@ class SsnService(metaclass=Singleton):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.token_refresh_margin = token_refresh_margin
+        self.verify_ssl = certifi.where() if verify_ssl else False
         self.session = requests.Session()
         # Se intenta obtener el token de autenticación al instanciar el servicio.
         self.token = self._get_token()
@@ -69,7 +71,7 @@ class SsnService(metaclass=Singleton):
         data = {"user": self.username, "cia": self.cia, "password": self.password}
         token_url = f"{self.base_url}/login"
         try:
-            response = self.session.post(token_url, json=data, headers=headers, verify=certifi.where())
+            response = self.session.post(token_url, json=data, headers=headers, verify=self.verify_ssl)
             if response.status_code == HTTPStatus.OK:
                 token = response.json().get("token")
                 logger.debug("Token obtenido exitosamente.")
@@ -209,7 +211,7 @@ class SsnService(metaclass=Singleton):
             self._log_request_payload(kwargs)
 
             try:
-                response = request_func(url, **kwargs, verify=certifi.where())
+                response = request_func(url, **kwargs, verify=self.verify_ssl)
                 status_code = response.status_code
 
                 # Loggear la respuesta

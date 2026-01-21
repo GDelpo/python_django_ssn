@@ -1,9 +1,9 @@
-{% extends "forms/partials/_base_form.html" %}
+﻿{% extends "forms/partials/_base_form.html" %}
 {% block extra_form_content %}
   <div class="bg-white/70 border border-gray-200 rounded-lg shadow-sm p-6 mb-6 overflow-hidden">
     <details class="group">
       <summary class="flex items-center cursor-pointer">
-        <span class="text-lg font-bold text-blue-600 truncate">Recuperar operación (UUID)</span>
+        <span class="text-lg font-bold text-blue-600 truncate">Recuperar operacion (UUID)</span>
         <span class="ml-auto transition-transform group-open:rotate-180">
           <i class="fas fa-chevron-down"></i>
         </span>
@@ -47,24 +47,23 @@
 {% endblock %}
 
 {% block submit_button %}
-  {% include "componentes/button.html" with icon="fas fa-plus" label=button_text color="primary" %}
+  {# Botón inicial - se modifica via JS según tipo_entrega #}
+  <div id="submitBtnWrapper" class="w-full">
+    {% include "componentes/button.html" with id="submitBtn" icon="fas fa-plus" label=button_text color="primary" %}
+  </div>
 {% endblock %}
 
 {% block extra_js %}
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // 1) “cronograma_semanal” solamente si valor === 'Semanal'
       initToggleFields({
         triggerId: 'id_tipo_entrega',
         dependentIds: ['cronograma_semanal'],
         shouldShowFn: function(valor) {
-          // Atención: triggerVal se pasa en MAYÚSCULAS, 
-          // así que comparamos contra 'SEMANAL'
           return valor === 'SEMANAL';
         }
       });
 
-      // 2) “cronograma_mensual” solamente si valor === 'Mensual'
       initToggleFields({
         triggerId: 'id_tipo_entrega',
         dependentIds: ['cronograma_mensual'],
@@ -72,6 +71,34 @@
           return valor === 'MENSUAL';
         }
       });
+
+      // Cambiar botón según tipo de entrega
+      const tipoEntregaSelect = document.getElementById('id_tipo_entrega');
+      const submitBtn = document.getElementById('submitBtn');
+      const defaultLabel = '{{ button_text }}';
+
+      function updateSubmitButton() {
+        const valor = tipoEntregaSelect.value.toUpperCase();
+        const iconEl = submitBtn.querySelector('i');
+        const labelEl = submitBtn.querySelector('span span');
+        
+        if (valor === 'MENSUAL') {
+          if (labelEl) labelEl.textContent = 'Generar Mensual';
+          if (iconEl) iconEl.className = 'fas fa-magic mr-1.5';
+          // Cambiar de primary (blue) a warning (yellow)
+          submitBtn.classList.remove('bg-blue-100', 'text-blue-700', 'hover:bg-blue-200');
+          submitBtn.classList.add('bg-yellow-100', 'text-yellow-800', 'hover:bg-yellow-200');
+        } else {
+          if (labelEl) labelEl.textContent = defaultLabel;
+          if (iconEl) iconEl.className = 'fas fa-plus mr-1.5';
+          // Volver a primary (blue)
+          submitBtn.classList.remove('bg-yellow-100', 'text-yellow-800', 'hover:bg-yellow-200');
+          submitBtn.classList.add('bg-blue-100', 'text-blue-700', 'hover:bg-blue-200');
+        }
+      }
+
+      updateSubmitButton();
+      tipoEntregaSelect.addEventListener('change', updateSubmitButton);
     });
   </script>
 {% endblock %}

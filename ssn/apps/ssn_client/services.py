@@ -12,12 +12,16 @@ logger = logging.getLogger("ssn_client")
 
 # Mapeo de estados SSN a estados internos
 class EstadoSSN:
-    """Estados que devuelve la API de la SSN"""
+    """
+    Estados que devuelve la API de la SSN.
+    IMPORTANTE: Los valores deben coincidir EXACTAMENTE con lo que devuelve la API.
+    """
     VACIO = "VACÍO"
-    CARGADO = "CARGADO"
-    PRESENTADO = "PRESENTADO"
-    RECTIFICACION_PENDIENTE = "RECTIFICACIÓN PENDIENTE"
-    A_RECTIFICAR = "A RECTIFICAR"
+    NO_PRESENTADO = "No Presentado"  # Estado sintético cuando no existe entrega
+    CARGADO = "Cargado"
+    PRESENTADO = "Presentado"
+    RECTIFICACION_PENDIENTE = "Rectificación Pendiente"
+    A_RECTIFICAR = "A Rectificar"
 
 
 def consultar_estado_ssn(
@@ -32,6 +36,7 @@ def consultar_estado_ssn(
     Returns:
         Tupla (estado_ssn, datos_completos, status_code)
         - estado_ssn: String con el estado ("VACÍO", "CARGADO", "PRESENTADO", etc.)
+                      o "No Presentado" si no existe entrega
         - datos_completos: Dict con toda la respuesta de la SSN
         - status_code: Código HTTP de la respuesta
     """
@@ -56,8 +61,11 @@ def consultar_estado_ssn(
             "cronograma": base_request.cronograma,
         }
 
+        # Identificador para logs (puede no tener uuid si es objeto temporal)
+        request_id = getattr(base_request, 'uuid', None) or f"{base_request.tipo_entrega}-{base_request.cronograma}"
+        
         logger.info(
-            f"Consultando estado en SSN para solicitud {base_request.uuid}: {endpoint_name}?{params}"
+            f"Consultando estado en SSN para {request_id}: {endpoint_name}?{params}"
         )
 
         # Hacer la consulta GET
@@ -68,14 +76,26 @@ def consultar_estado_ssn(
             return None, response, status
 
         # Extraer el estado de la respuesta
-        estado = response.get("estado", EstadoSSN.VACIO)
-        logger.info(f"Estado SSN para {base_request.uuid}: {estado}")
+        # La API puede devolver:
+        # - {"estado": "Presentado", ...} cuando existe la entrega
+        # - {"message": "No existe entrega en el periodo y compañía enviado."} cuando no existe
+        if "estado" in response:
+            estado = response.get("estado")
+        elif "message" in response and "No existe entrega" in response.get("message", ""):
+            estado = EstadoSSN.NO_PRESENTADO
+        else:
+            estado = EstadoSSN.VACIO
+        
+        # Identificador para logs
+        request_id = getattr(base_request, 'uuid', None) or f"{base_request.tipo_entrega}-{base_request.cronograma}"
+        logger.info(f"Estado SSN para {request_id}: {estado}")
 
         return estado, response, status
 
     except Exception as e:
+        request_id = getattr(base_request, 'uuid', None) or f"{getattr(base_request, 'tipo_entrega', '?')}-{getattr(base_request, 'cronograma', '?')}"
         logger.error(
-            f"Excepción al consultar estado SSN para {base_request.uuid}: {str(e)}"
+            f"Excepción al consultar estado SSN para {request_id}: {str(e)}"
         )
         return None, {"error": str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR
 
@@ -130,7 +150,7 @@ def enviar_y_guardar_solicitud(base_request, operations, allow_empty=False):
         http_method_name = None
         necesita_confirmacion = False
 
-        if estado_ssn in [EstadoSSN.VACIO, EstadoSSN.CARGADO]:
+        if estado_ssn in [EstadoSSN.VACIO, EstadoSSN.NO_PRESENTADO, EstadoSSN.CARGADO]:
             # Puede enviarse una nueva presentación o sobrescribir la cargada
             http_method_name = "post_resource"
             necesita_confirmacion = True
