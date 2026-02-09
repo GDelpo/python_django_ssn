@@ -22,8 +22,7 @@ else
 fi
 
 echo "⚙️  Renderizando configuración Nginx desde template..."
-# Añade las variables de puerto a la lista para que sean reemplazadas
-envsubst '${SSL_DOMAIN} ${SSL_IP} ${SSL_ORGANIZATION} ${SSL_COUNTRY} ${NGINX_PORT_HTTP} ${NGINX_PORT_HTTPS}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+envsubst '${SSL_DOMAIN} ${SSL_IP} ${SSL_ORGANIZATION} ${SSL_COUNTRY} ${NGINX_PORT_HTTP} ${NGINX_PORT_HTTPS} ${WEB_UPSTREAM}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
 echo "🚀 Iniciando Nginx..."
 exec nginx -g "daemon off;"

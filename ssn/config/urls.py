@@ -24,6 +24,7 @@ from .health_check import health_check
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("auth/", include("accounts.urls", namespace="accounts")),
     path("", include("theme.urls", namespace="theme")),
     path("operaciones/", include("operaciones.urls", namespace="operaciones")),
     path("health/", health_check, name="health_check"),

@@ -22,17 +22,27 @@ echo "ℹ️ Aplicando migraciones..."
 python ssn/manage.py migrate --noinput
 echo "✅ Migraciones aplicadas"
 
-# Crear superusuario si no existe y las variables están definidas
-if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
-    python ssn/manage.py shell <<EOF
+# Crear superusuario solo en modo local (sin servicio de identidad externo)
+# Si IDENTITY_SERVICE_URL está configurado, los usuarios se gestionan desde el servicio de identidad
+if [ -z "$IDENTITY_SERVICE_URL" ]; then
+    if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
+        python ssn/manage.py shell <<EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
-if not User.objects.filter(username="$DJANGO_SUPERUSER_USERNAME").exists():
-    User.objects.create_superuser("$DJANGO_SUPERUSER_USERNAME", "$DJANGO_SUPERUSER_EMAIL", "$DJANGO_SUPERUSER_PASSWORD")
+if not User.objects.filter(email="$DJANGO_SUPERUSER_EMAIL").exists():
+    User.objects.create_superuser(
+        email="$DJANGO_SUPERUSER_EMAIL",
+        password="$DJANGO_SUPERUSER_PASSWORD",
+        first_name="${DJANGO_SUPERUSER_FIRST_NAME:-Admin}",
+        last_name="${DJANGO_SUPERUSER_LAST_NAME:-User}"
+    )
     print("✅ Superusuario creado")
 else:
     print("✅ Superusuario ya existe")
 EOF
+    fi
+else
+    echo "ℹ️ Usando servicio de identidad externo - saltando creación de superusuario local"
 fi
 
 echo "🚀 Iniciando servidor..."

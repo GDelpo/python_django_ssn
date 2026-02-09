@@ -5,6 +5,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 
+from accounts.middleware import LoginRequiredMixin
 from ..models import BaseRequestModel
 from .model_utils import get_mapping_model
 
@@ -307,11 +308,15 @@ class EditableStateRequiredMixin:
 
 
 class StandaloneViewMixin(
+    LoginRequiredMixin,
     BreadcrumbsMixin,
     HeaderButtonsMixin,
     ContextMixin,
 ):
     """
+    Mixin base para todas las vistas que requieren autenticación.
+    Incluye breadcrumbs, botones de header y contexto común.
+
     Vistas que NO usan base_request en la URL:
       - SolicitudBaseCreateView (path '')
       - SolicitudBaseListView (path 'solicitudes/')

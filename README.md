@@ -126,12 +126,13 @@ cp .env-example .env # Editar .env con tus valores
 3. **Construir e iniciar con Docker Compose**
 
 ```bash
-docker compose build --no-cache && docker compose up -d
+# Producción con Nginx + SSL (standalone, sin Traefik)
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml up -d --build
 ```
 
 4. **Acceder a la aplicación**
 
-La aplicación estará disponible en https://'SSL_DOMAIN':'NGINX_PORT_HTTPS'" o "https://'SSL_IP':'NGINX_PORT_HTTPS'". Valores que debes configurar en tu archivo `.env`. Entonces, asegúrate de que el puerto NGINX esté libre y que el dominio o IP estén correctamente configurados.
+La aplicación estará disponible en `https://<SSL_DOMAIN>:<NGINX_PORT_HTTPS>` o `https://<SSL_IP>:<NGINX_PORT_HTTPS>`. Valores que debes configurar en tu archivo `.env`. Asegúrate de que el puerto NGINX esté libre y que el dominio o IP estén correctamente configurados.
 
 ### Instalación Standalone (con reverse proxy externo)
 
@@ -157,8 +158,7 @@ WEB_HOST=127.0.0.1
 3. **Iniciar en modo standalone**
 
 ```bash
-docker compose -f docker-compose.standalone.yml build --no-cache
-docker compose -f docker-compose.standalone.yml up -d
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml up -d --build
 ```
 
 4. **Configurar tu reverse proxy externo**
@@ -168,7 +168,7 @@ La app estará disponible en `http://127.0.0.1:8000`. Configurá tu proxy para r
 Ejemplos de configuración disponibles en `docs/`:
 - **Nginx**: [`docs/nginx-external.conf.example`](docs/nginx-external.conf.example)
 - **Apache**: [`docs/apache-external.conf.example`](docs/apache-external.conf.example)
-- **Traefik**: [`docs/traefik.example.yml`](docs/traefik.example.yml)
+- **Traefik**: Ver sección [Despliegue con Traefik](#despliegue-con-traefik-nuevo-servidor-con-microservicios)
 
 > [!IMPORTANT]
 > Tu reverse proxy **debe** enviar el header `X-Forwarded-Proto: https` para que Django maneje correctamente las URLs seguras y CSRF.
@@ -176,8 +176,85 @@ Ejemplos de configuración disponibles en `docs/`:
 5. **Servir archivos estáticos y media**
 
 Para mejor rendimiento, configurá tu proxy para servir directamente:
-- `/static/` → Copiar archivos con: `docker compose -f docker-compose.standalone.yml exec web python /app/ssn/manage.py collectstatic`
-- `/media/` → Montar el volumen `media_volume` o copiar desde el contenedor
+- `/static/` → Copiar archivos con: `docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python /app/ssn/manage.py collectstatic`
+- `/media/` → Montar el volumen `ssn_media` o copiar desde el contenedor
+
+### Despliegue con Traefik
+
+Para desplegar SSN junto a los microservicios FastAPI (identidad, mailsender) detrás de Traefik.
+
+**Estructura `docker/`:**
+
+```
+docker/
+├── Dockerfile                              # Desarrollo (single stage, runserver)
+├── Dockerfile.prod                         # Producción (multi-stage, gunicorn + WhiteNoise)
+├── Dockerfile.nginx                        # Nginx con SSL (standalone)
+├── docker-compose.dev.yml                  # Desarrollo local
+├── docker-compose.prod.standalone.yml      # Producción sin Traefik (Nginx+SSL)
+├── docker-compose.prod.traefik.yml         # Producción con Traefik (sin Nginx, WhiteNoise)
+├── docker-compose.prod.traefik.nginx.yml   # Override: agrega Nginx al modo Traefik
+└── nginx/
+    ├── default.conf.template               # Nginx SSL config (standalone)
+    ├── nginx-entrypoint.sh                 # Entrypoint con generación de cert autofirmado
+    └── traefik.conf.template               # Nginx HTTP-only (para override con Traefik)
+```
+
+**1. Requisitos previos:**
+
+```bash
+# Traefik debe estar corriendo en el workspace principal
+# (docker-compose.traefik.yml vive en la raíz del workspace, NO en este proyecto)
+cd /ruta/al/workspace
+docker compose -f docker-compose.traefik.yml up -d
+
+# La red traefik-public debe existir
+docker network create traefik-public
+```
+
+**2. Configurar `.env`:**
+
+```bash
+cd python_django_ssn
+cp .env-example .env
+# Editar .env con los valores correspondientes
+# SSL_DOMAIN ya debe estar configurado (es el dominio que apunta a la IP del servidor)
+```
+
+**3. Levantar con Traefik:**
+
+```bash
+# Modo por defecto: Traefik → Gunicorn (WhiteNoise sirve estáticos)
+docker compose --env-file .env -f docker/docker-compose.prod.traefik.yml up -d --build
+
+# Modo con Nginx (override): Traefik → Nginx → Gunicorn
+docker compose --env-file .env \
+  -f docker/docker-compose.prod.traefik.yml \
+  -f docker/docker-compose.prod.traefik.nginx.yml \
+  up -d --build
+```
+
+**4. Acceso y routing:**
+
+Traefik rutea todo por el mismo dominio (`SSL_DOMAIN`):
+
+| Request | Servicio | Regla Traefik |
+|---------|----------|---------------|
+| `http://dominio.com/identidad/*` | Identidad (FastAPI) | PathPrefix |
+| `http://dominio.com/mailsender/*` | Mailsender (FastAPI) | PathPrefix |
+| `http://dominio.com/*` (todo lo demás) | SSN (Django) | Host |
+
+**Arquitectura:**
+
+| Modo | Flujo | Static files |
+|------|-------|-------------|
+| Default | `Traefik → Gunicorn` | WhiteNoise (comprimidos + cache headers) |
+| Con Nginx | `Traefik → Nginx → Gunicorn` | Nginx sirve `/static/` y `/media/` |
+
+> [!IMPORTANT]
+> SSN usa **routing por Host** (no PathPrefix) porque es una aplicación Django con templates.
+> Los servicios FastAPI (identidad, mailsender) usan PathPrefix porque son APIs puras.
+> Traefik le da mayor prioridad a PathPrefix → las APIs no se ven afectadas.
 
 ### Instalación local (desarrollo)
 
@@ -256,17 +333,22 @@ python manage.py runserver
 .
 ├── .env-example              # Plantilla para variables de entorno
 ├── .env                      # Variables de entorno (no incluido en Git)
-├── Dockerfile                # Configuración para Docker
-├── Dockerfile.nginx          # Configuración específica para Nginx
-├── docker-compose.yml        # Configuración de servicios
 ├── entrypoint.sh             # Script de inicio para el contenedor web
-├── nginx/                    # Configuración de Nginx
-│   └── default.conf.template # Plantilla de configuración de Nginx
-├── nginx-entrypoint.sh       # Script de inicio para Nginx con certificados
 ├── requirements.txt          # Dependencias de Python
+├── docker/                   # Archivos Docker (Dockerfiles, Compose, Nginx)
+│   ├── Dockerfile            # Dev (runserver)
+│   ├── Dockerfile.prod       # Prod (gunicorn + WhiteNoise)
+│   ├── Dockerfile.nginx      # Nginx con SSL
+│   ├── docker-compose.*.yml  # Variantes de despliegue
+│   └── nginx/                # Configuración de Nginx
 └── ssn/                      # Código principal de la aplicación
     ├── manage.py
     ├── apps/                 # Aplicaciones de Django
+    │   ├── accounts/         # Autenticación y gestión de usuarios
+    │   │   ├── models.py     # Modelo de usuario personalizado (email como ID)
+    │   │   ├── services.py   # Lógica de autenticación (local/externa)
+    │   │   ├── backends.py   # Backend de autenticación por email
+    │   │   └── middleware.py # Decoradores de protección de vistas
     │   ├── operaciones/      # App principal de operaciones
     │   │   ├── models/       # Modelos de datos
     │   │   │   ├── base/     # Mixins y clases base (timestamps, solicitud, etc.)
@@ -281,6 +363,50 @@ python manage.py runserver
     ├── media/                # Archivos subidos por usuarios
     └── config/               # Configuración del proyecto Django
 ```
+
+## 🔐 Autenticación
+
+El sistema incluye autenticación flexible con soporte para modo local o servicio de identidad externo.
+
+### Modos de Autenticación
+
+| Modo | `IDENTITY_SERVICE_URL` | Descripción |
+|------|------------------------|-------------|
+| **Local** | Vacío o no configurado | Usa la base de datos de Django. Ideal para desarrollo o instalaciones standalone. |
+| **Externo** | URL del servicio | Usa un servicio FastAPI de identidad centralizado. Los usuarios se sincronizan automáticamente. |
+
+### Modo Local (por defecto)
+
+```bash
+# .env
+IDENTITY_SERVICE_URL=
+# Variables de superusuario
+DJANGO_SUPERUSER_EMAIL=admin@example.com
+DJANGO_SUPERUSER_PASSWORD=cambiame_superusuario
+```
+
+El superusuario se crea automáticamente al iniciar Docker. Para crear usuarios adicionales:
+
+```bash
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py createsuperuser
+```
+
+### Modo Servicio de Identidad
+
+```bash
+# .env
+IDENTITY_SERVICE_URL=http://python_fastapi_identidad:8000
+IDENTITY_SERVICE_VERIFY_SSL=True
+```
+
+En este modo:
+- Los usuarios se autentican contra el servicio externo
+- Se sincronizan automáticamente en el primer login
+- No se crea superusuario local (se usan las cuentas del servicio de identidad)
+
+### Protección de Rutas
+
+Todas las vistas de `operaciones` requieren autenticación. Para acceder a cualquier funcionalidad, los usuarios deben estar logueados.
 
 ## 🔧 Uso
 
@@ -316,6 +442,10 @@ Las principales variables de entorno que debes configurar:
 | `COMPANY_WEBSITE` | URL del sitio web oficial de la compañía. | `https://www.tu-compania.com` |
 | `COMPANY_LOGO_URL` | URL del logo de la compañía para usar en la aplicación. | `https://tu-compania_logo_negro.png` |
 | `COMPANY_FAVICON_URL` | URL del favicon de la compañía para la pestaña del navegador. | `https://www.tu-compania.com/favicon.ico` |
+| `IDENTITY_SERVICE_URL` | URL del servicio de identidad externo. Vacío = modo local. | `http://python_fastapi_identidad:8000` |
+| `IDENTITY_SERVICE_VERIFY_SSL` | Verificar SSL al conectar con servicio de identidad. | `True` o `False` |
+| `DJANGO_SUPERUSER_EMAIL` | Email del superusuario a crear (solo modo local). | `admin@example.com` |
+| `DJANGO_SUPERUSER_PASSWORD` | Contraseña del superusuario (solo modo local). | |
 
 ## 📋 Mantenimiento
 
@@ -324,7 +454,7 @@ Las principales variables de entorno que debes configurar:
 Para respaldar la base de datos:
 
 ```bash
-docker compose exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup_$(date +%Y%m%d_%H%M%S).sql
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup_$(date +%Y%m%d_%H%M%S).sql
 ```
 
 ### Logs
@@ -332,13 +462,13 @@ docker compose exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup_$(date +%
 Para ver los logs de la aplicación:
 
 ```bash
-docker compose logs web
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml logs web
 ```
 
 Para ver los logs de Nginx:
 
 ```bash
-docker compose logs nginx
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml logs nginx
 ```
 
 También puedes acceder a los logs propios de Django yendo al directorio `ssn/logs/`.
@@ -348,8 +478,8 @@ También puedes acceder a los logs propios de Django yendo al directorio `ssn/lo
 Los certificados se renuevan automáticamente con el contenedor certbot, pero si necesitas renovación manual:
 
 ```bash
-docker compose exec certbot certbot renew
-docker compose restart nginx
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec certbot certbot renew
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml restart nginx
 ```
 
 ### 🔹 Limpieza de solicitudes antiguas (sin enviar y vacías)
@@ -359,7 +489,7 @@ El comando `clean_requests` elimina solicitudes sin operaciones asociadas, que n
 **Desde contenedor Docker:**
 
 ```bash
-docker compose exec web python ssn/manage.py clean_requests --days 7
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py clean_requests --days 7
 # Reemplaza 7 por el número de días que desees (el parámetro --days es opcional)
 ```
 
@@ -380,7 +510,7 @@ El comando `clean_preview_excels` elimina archivos temporales de Excel generados
 **Desde contenedor Docker:**
 
 ```bash
-docker compose exec web python ssn/manage.py clean_preview_excels --hours 1
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py clean_preview_excels --hours 1
 # Reemplaza 1 por la cantidad de horas que desees (el parámetro --hours es opcional)
 ```
 
@@ -398,8 +528,8 @@ python manage.py clean_preview_excels --hours 1
 > **Ejemplo de entrada en crontab para ejecutarlo periódicamente:**
 >
 > ```cron
-> 0 * * * * docker compose exec web python ssn/manage.py clean_preview_excels # “At minute 0.”
-> 0 * * * 1 docker compose exec web python ssn/manage.py clean_requests # “At minute 0 on Monday.”
+0 * * * * cd /ruta/a/python_django_ssn && docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py clean_preview_excels
+> 0 * * * 1 cd /ruta/a/python_django_ssn && docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py clean_requests
 > ```
 >
 > Herramienta útil para probar la sintaxis: [crontab.guru](https://crontab.guru/)
@@ -424,13 +554,13 @@ El comando `sync_ssn_data` permite sincronizar datos históricos desde la API de
 
 ```bash
 # Sincronizar todas las semanas del 2025
-docker compose exec web python ssn/manage.py sync_ssn_data --period semanal --year 2025
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py sync_ssn_data --period semanal --year 2025
 
 # Sincronizar datos mensuales del 2025 (modo prueba)
-docker compose exec web python ssn/manage.py sync_ssn_data --period mensual --year 2025 --dry-run
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py sync_ssn_data --period mensual --year 2025 --dry-run
 
 # Sincronizar un cronograma específico, forzando actualización
-docker compose exec web python ssn/manage.py sync_ssn_data --period semanal --cronograma 2025-15 --force
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py sync_ssn_data --period semanal --cronograma 2025-15 --force
 ```
 
 **En entorno local de desarrollo:**
@@ -478,20 +608,20 @@ El comando `send_deadline_alerts` permite enviar recordatorios por email. Ideal 
 
 ```bash
 # Ver alertas pendientes sin enviar email
-docker compose exec web python ssn/manage.py send_deadline_alerts --dry-run
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py send_deadline_alerts --dry-run
 
 # Enviar solo alertas críticas (vencidas)
-docker compose exec web python ssn/manage.py send_deadline_alerts --level danger
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py send_deadline_alerts --level danger
 
 # Enviar a un email específico
-docker compose exec web python ssn/manage.py send_deadline_alerts --to alertas@empresa.com
+docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py send_deadline_alerts --to alertas@empresa.com
 ```
 
 **Configuración de cron recomendada:**
 
 ```bash
 # Enviar alertas diariamente a las 8:00 AM
-0 8 * * * docker compose exec web python ssn/manage.py send_deadline_alerts
+0 8 * * * cd /ruta/a/python_django_ssn && docker compose --env-file .env -f docker/docker-compose.prod.standalone.yml exec web python ssn/manage.py send_deadline_alerts
 ```
 
 > [!NOTE]
@@ -506,12 +636,7 @@ Los archivos con datos sensibles no deben subirse a Git:
 
 ## ✏ TODOs
 
-- ~~Generar presentación MENSUAL de operaciones a la SSN.~~ ✅ Implementado
-- ~~Sincronización de datos históricos desde SSN.~~ ✅ Implementado (`sync_ssn_data`)
-- ~~Sistema de alertas de vencimientos en UI.~~ ✅ Implementado
-- ~~Alertas por email con `send_deadline_alerts`.~~ ✅ Implementado
 - Revisar APIS BYMA, para poder generar reportes, etc.
-- Organizar archivos Docker y Nginx en un directorio `docker/` para mayor claridad. Esto hace cambiar algunas rutas en el `docker-compose.yml` y en los archivos de configuración de Nginx.
 - Implementar directamente los trabajos cron en el contenedor web, para evitar depender del host. Esto permite que la limpieza de solicitudes y archivos temporales se realice automáticamente sin intervención manual. Se volvería completamente Docker nativo.
 
 

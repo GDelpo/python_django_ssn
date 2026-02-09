@@ -1,0 +1,96 @@
+# ============================================================================
+# Multi-stage Dockerfile for Production
+# Optimized for small image size and security
+# ============================================================================
+# Stage 1: Build Tailwind CSS, collect static files, install Python deps
+# Stage 2: Minimal runtime image with only what's needed
+# ============================================================================
+
+# ============================================================================
+# Stage 1: Builder - Compile dependencies and frontend assets
+# ============================================================================
+FROM python:3.12-slim-bookworm AS builder
+
+WORKDIR /build
+
+# 1. Install system dependencies and Node.js (required for Tailwind CSS)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl gnupg build-essential libpq-dev libmagic1 && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2. Install Python dependencies (copy requirements first for better caching)
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# 3. Copy project context
+COPY . .
+
+# 4. Copy build-specific .env (dummy values for collectstatic/tailwind)
+COPY .env.build /build/.env
+
+# 5. Set working directory and settings for the build
+WORKDIR /build/ssn
+ENV DJANGO_SETTINGS_MODULE=config.settings.build
+
+# 6. Install, update and compile Tailwind CSS
+RUN python manage.py tailwind install && \
+    python manage.py tailwind update && \
+    python manage.py tailwind build
+
+# 7. Collect all static files (including the CSS created by Tailwind)
+RUN python manage.py collectstatic --noinput --clear
+
+
+# ============================================================================
+# Stage 2: Runtime - Minimal production image
+# ============================================================================
+FROM python:3.12-slim-bookworm
+
+# Build arguments for UID/GID (avoid permission issues with volumes)
+ARG UID=1000
+ARG GID=1000
+
+# 1. Create group, non-root user, and install only runtime dependencies
+RUN groupadd -g ${GID} -o python && \
+    useradd --create-home -u ${UID} -g ${GID} -s /bin/bash python && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends curl libpq5 netcat-openbsd postgresql-client libmagic1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2. Create directory structure
+RUN mkdir -p /app/static /app/ssn/media/previews /app/ssn/media/comprobantes /app/ssn/logs && \
+    chown -R python:python /app
+
+WORKDIR /app
+
+# 3. Production environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/ssn
+
+# 4. Copy pre-compiled artifacts from builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder --chown=python:python /build/static /app/static
+COPY --chown=python:python ./ssn /app/ssn
+COPY --chown=python:python entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# 5. Switch to non-root user
+USER python
+
+# 6. Expose port and define startup command
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f -H "X-Forwarded-Proto: https" http://localhost:8000/health/ || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]
+# Production: Gunicorn with proxy headers support (Traefik/Nginx)
+# --forwarded-allow-ips='*': Accept forwarded headers from any IP (Traefik)
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--forwarded-allow-ips=*"]

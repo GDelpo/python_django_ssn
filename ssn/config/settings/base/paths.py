@@ -13,7 +13,18 @@ sys.path.insert(0, str(APPS_DIR))
 # Directorios de Media, Static y Logs
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
-STATIC_ROOT = BASE_DIR / "static"
+# Static files collected OUTSIDE ssn/ directory (at project root level)
+# Docker: /app/static  |  Local: <project_root>/static
+STATIC_ROOT = BASE_DIR.parent / "static"
 STATIC_URL = "/static/"
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+# WhiteNoise: serve static files directly from Gunicorn
+# Works transparently - if Nginx is in front, it serves static first;
+# if not, WhiteNoise handles it with compression and caching.
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}

@@ -27,5 +27,8 @@ python-slugify==8.0.4
 # Servidor WSGI para producción
 gunicorn==23.0.0
 
+# Servir archivos estáticos sin Nginx (compatible con Traefik, Heroku, etc.)
+whitenoise==6.9.0
+
 # Base de datos y ORM
 psycopg2-binary==2.9.10

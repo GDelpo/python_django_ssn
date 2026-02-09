@@ -13,9 +13,22 @@ SSN_API_RETRY_DELAY = config("SSN_API_RETRY_DELAY", default=5, cast=int)
 SSN_API_ENABLED = config("SSN_API_ENABLED", default=True, cast=bool)
 SSN_API_VERIFY_SSL = config("SSN_API_VERIFY_SSL", default=True, cast=bool)  # False para test con cert self-signed
 
+# --- Authentication Configuration ---
+# Solo necesitas configurar IDENTITY_SERVICE_URL
+# - No lo configures: autenticación local (base de datos Django)
+# - Configúralo: autenticación centralizada (servicio FastAPI)
+IDENTITY_SERVICE_URL = config("IDENTITY_SERVICE_URL", default="")
+
+# SSL verification for Identity Service (solo si usas servicio externo)
+IDENTITY_SERVICE_VERIFY_SSL = config(
+    "IDENTITY_SERVICE_VERIFY_SSL",
+    default=True,
+    cast=bool,
+)
+
 # --- Otras configuraciones ---
 PREVIEW_MAX_AGE_MINUTES = config("PREVIEW_MAX_AGE_MINUTES", default=5, cast=int)
-LOGGING_APPS = ["operaciones", "ssn_client"]
+LOGGING_APPS = ["operaciones", "ssn_client", "accounts"]
 SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="soporte@compania.com")
 
 # --- Configuraciones de Terceros ---
