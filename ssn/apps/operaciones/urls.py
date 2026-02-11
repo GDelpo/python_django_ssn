@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    ExcelDownloadView,
     MonthlyStockGenerateView,
     OperacionCreateView,
     OperacionDeleteView,
@@ -57,6 +58,12 @@ urlpatterns = [
         "<uuid:uuid>/preview/",
         OperacionPreviewView.as_view(),
         name="preview_operaciones",
+    ),
+    # Descargar Excel de preview
+    path(
+        "<uuid:uuid>/preview/excel/",
+        ExcelDownloadView.as_view(),
+        name="download_excel",
     ),
     # Enviar operaciones serializadas
     path(

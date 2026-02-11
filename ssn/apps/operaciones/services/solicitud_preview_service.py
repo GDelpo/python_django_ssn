@@ -136,8 +136,13 @@ class SolicitudPreviewService:
 
         output.seek(0)
         filename = f"previews/solicitud_{self.base_request.uuid}.xlsx"
-        file_path = default_storage.save(filename, ContentFile(output.read()))
-        return default_storage.url(file_path)
+        # Sobrescribir si ya existe (re-generar preview)
+        if default_storage.exists(filename):
+            default_storage.delete(filename)
+        default_storage.save(filename, ContentFile(output.read()))
+        # Devolver URL a la vista de descarga (no depende de MEDIA serving)
+        from django.urls import reverse
+        return reverse("operaciones:download_excel", kwargs={"uuid": str(self.base_request.uuid)})
 
     def _write_base_sheet(self, writer, base_df, sheet_name, border_format, bold_border_format):
         """Escribe la hoja de información base de la solicitud."""

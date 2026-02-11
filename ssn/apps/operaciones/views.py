@@ -1,8 +1,10 @@
 import logging
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Exists, OuterRef
+from django.http import FileResponse, Http404
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
@@ -685,6 +687,29 @@ class OperacionPreviewView(
             }
         )
         return context
+
+
+class ExcelDownloadView(
+    OperationReadonlyViewMixin,
+    View,
+):
+    """Sirve el archivo Excel de preview para descarga (funciona en producción sin DEBUG)."""
+    title = ""
+
+    def get(self, request, *args, **kwargs):
+        import os
+        filepath = os.path.join(
+            settings.MEDIA_ROOT, "previews",
+            f"solicitud_{self.base_request.uuid}.xlsx",
+        )
+        if not os.path.exists(filepath):
+            raise Http404("El archivo Excel no existe. Genere la vista previa nuevamente.")
+        return FileResponse(
+            open(filepath, "rb"),
+            as_attachment=True,
+            filename=f"solicitud_{self.base_request.uuid}.xlsx",
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
 
 
 class OperacionSendView(
