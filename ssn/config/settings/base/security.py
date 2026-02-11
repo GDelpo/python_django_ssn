@@ -14,6 +14,7 @@ AUTH_USER_MODEL = "accounts.User"
 # Use email instead of username for login
 AUTHENTICATION_BACKENDS = [
     "accounts.backends.EmailBackend",
+    "accounts.backends.IdentityServiceBackend",
     "django.contrib.auth.backends.ModelBackend",  # Fallback
 ]
 

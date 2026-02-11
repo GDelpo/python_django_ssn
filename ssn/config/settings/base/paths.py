@@ -24,6 +24,9 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 # Works transparently - if Nginx is in front, it serves static first;
 # if not, WhiteNoise handles it with compression and caching.
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },

@@ -29,5 +29,19 @@ _csrf_origins.extend([o for o in _extra_origins if o])
 
 CSRF_TRUSTED_ORIGINS = _csrf_origins
 
+# --- Security overrides ---
+# SSL/HTTPS settings are controlled via env vars so the same image
+# works behind Traefik (HTTP-only initially) or Nginx (HTTPS).
+# When Traefik has TLS configured, set SECURE_SSL_REDIRECT=True in .env.
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
+SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=False, cast=bool)
+CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=False, cast=bool)
+
+# Disable HSTS until Traefik has TLS configured.
+# Once HTTPS is active, set SECURE_HSTS_SECONDS=31536000 in .env.
+SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+
 # Cargar configuración de Logging para producción
 LOGGING = get_logging_config(debug_mode=DEBUG, logs_dir=LOGS_DIR, apps=LOGGING_APPS)

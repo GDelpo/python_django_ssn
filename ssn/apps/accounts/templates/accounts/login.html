@@ -3,41 +3,34 @@
 
 {% block extra_css %}
 <style>
-  .login-container {
-    animation: fadeIn 0.3s ease-in;
+  .login-card {
+    animation: fadeIn 0.4s ease-in;
   }
-  
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
 {% endblock %}
 
 {% block full_width_content %}
-<div class="min-h-[calc(100vh-140px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-  <div class="login-container w-full max-w-md">
+<div class="flex items-start justify-center py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-50 to-gray-100">
+  <div class="login-card w-full max-w-md" style="margin-top: 3rem;">
+
     <!-- Card -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8">
-        <div class="text-center">
-          <h1 class="text-2xl font-bold text-white mb-2">Inicio de Sesión</h1>
-          <p class="text-blue-100">Sistema de Operaciones SSN</p>
-        </div>
+
+      <!-- Header - blue gradient like home hero -->
+      <div class="bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-8 text-center">
+        <h1 class="text-2xl font-extrabold text-white">Operaciones SSN</h1>
+        <p class="mt-1 text-sm text-blue-200">Iniciá sesión para continuar</p>
       </div>
 
       <!-- Alerts -->
       {% if messages %}
-      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <div class="px-6 pt-4">
         {% for message in messages %}
-        <div class="p-3 rounded-lg mb-2
+        <div class="p-3 rounded-lg mb-2 flex items-start
           {% if message.tags == 'error' %}
             bg-red-50 border border-red-200 text-red-700
           {% elif message.tags == 'success' %}
@@ -48,6 +41,7 @@
             bg-blue-50 border border-blue-200 text-blue-700
           {% endif %}
         ">
+          <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle text-red-500{% elif message.tags == 'success' %}fa-check-circle text-green-500{% elif message.tags == 'warning' %}fa-exclamation-triangle text-yellow-500{% else %}fa-info-circle text-blue-500{% endif %} mt-0.5 mr-2 flex-shrink-0"></i>
           <p class="text-sm font-medium">{{ message }}</p>
         </div>
         {% endfor %}
@@ -55,102 +49,92 @@
       {% endif %}
 
       <!-- Form -->
-      <div class="px-6 py-8">
-        <form method="post" novalidate class="space-y-6">
+      <div style="padding: 2rem 2rem 1.75rem 2rem;">
+        <form method="post" novalidate style="display: flex; flex-direction: column; gap: 1.5rem;">
           {% csrf_token %}
 
-          <!-- Email Field -->
+          <!-- Email -->
           <div>
             <label for="id_email" class="block text-sm font-medium text-gray-700 mb-2">
               {{ form.email.label }}
             </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+                <i class="fas fa-envelope text-gray-400"></i>
               </div>
               {{ form.email }}
             </div>
             {% if form.email.errors %}
-            <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+            <p class="mt-1 text-sm text-red-600"><i class="fas fa-exclamation-circle mr-1"></i>{{ form.email.errors.0 }}</p>
             {% endif %}
           </div>
 
-          <!-- Password Field -->
+          <!-- Password -->
           <div>
             <label for="id_password" class="block text-sm font-medium text-gray-700 mb-2">
               {{ form.password.label }}
             </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+                <i class="fas fa-lock text-gray-400"></i>
               </div>
               {{ form.password }}
             </div>
             {% if form.password.errors %}
-            <p class="mt-1 text-sm text-red-600">{{ form.password.errors.0 }}</p>
+            <p class="mt-1 text-sm text-red-600"><i class="fas fa-exclamation-circle mr-1"></i>{{ form.password.errors.0 }}</p>
             {% endif %}
           </div>
 
           <!-- Remember Me -->
           <div class="flex items-center">
-            <div class="flex items-center h-5">
-              {{ form.remember_me }}
-            </div>
-            <div class="ml-2 text-sm">
-              <label for="id_remember_me" class="text-gray-700 cursor-pointer">
-                {{ form.remember_me.label }}
-              </label>
-            </div>
+            {{ form.remember_me }}
+            <label for="id_remember_me" class="ml-2 text-sm text-gray-700 cursor-pointer">
+              {{ form.remember_me.label }}
+            </label>
           </div>
 
-          <!-- Submit Button -->
-          <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 flex items-center justify-center">
-            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2m14-4v2a2 2 0 01-2 2h-2.5a2 2 0 01-2-2v-2m0-4V7a2 2 0 012-2h2.5a2 2 0 012 2v4m-6-4v4" />
-            </svg>
-            Inicia Sesión
+          <!-- Submit -->
+          <button type="submit" class="w-full flex items-center justify-center px-8 py-3 text-base font-medium rounded-md text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 transform hover:-translate-y-0.5 hover:shadow-lg">
+            <i class="fas fa-sign-in-alt mr-2"></i>
+            Iniciar Sesión
           </button>
         </form>
       </div>
 
       <!-- Footer -->
-      <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
-        <p class="text-sm text-gray-600 text-center">
-          <svg class="inline-block h-4 w-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Integración:
-          {% if use_identity_service %}
-            <span class="font-semibold text-blue-600">Servicio de Identidad</span>
-          {% else %}
-            <span class="font-semibold text-gray-700">Base de Datos Local</span>
-          {% endif %}
-        </p>
+      <div class="bg-gray-50 px-8 py-4 border-t border-gray-200 flex items-center justify-between">
+        <span class="text-xs text-gray-400">
+          <i class="fas fa-shield-alt mr-1 text-blue-400"></i>Conexión segura
+        </span>
+        {% if use_identity_service %}
+        <span class="text-xs text-blue-600 font-medium">
+          <i class="fas fa-cloud mr-1"></i>Servicio de Identidad
+        </span>
+        {% else %}
+        <span class="text-xs text-gray-500 font-medium">
+          <i class="fas fa-database mr-1"></i>Base de Datos Local
+        </span>
+        {% endif %}
       </div>
     </div>
 
-    <!-- Support Link -->
-    <div class="mt-6 text-center">
-      <p class="text-sm text-gray-600">
-        ¿Problemas para iniciar sesión?
-        <a href="mailto:{{ support_email }}" class="font-medium text-blue-600 hover:text-blue-700">
-          Contacta a soporte
-        </a>
-      </p>
-    </div>
+    <!-- Support -->
+    <p class="mt-5 text-center text-sm text-gray-500">
+      ¿Problemas para iniciar sesión?
+      <a href="mailto:{{ support_email }}" class="font-medium text-blue-600 hover:text-blue-800 transition-colors">
+        {{ support_email }}
+      </a>
+    </p>
+
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Show/hide password on focus
-  document.getElementById('id_password')?.addEventListener('focus', function() {
-    this.style.transition = 'background-color 0.2s ease';
+  document.addEventListener("DOMContentLoaded", function () {
+    const emailField = document.getElementById('id_email');
+    if (emailField && !emailField.value) emailField.focus();
   });
 </script>
 {% endblock %}

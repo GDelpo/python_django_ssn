@@ -126,11 +126,14 @@ class BaseRequestForm(forms.ModelForm):
         
         # Solo validar completamente para nuevas instancias
         if is_new_instance:
-            validation_errors = SolicitudValidationService.validate_new_solicitud(
+            validation_errors, validation_warnings = SolicitudValidationService.validate_new_solicitud(
                 cronograma=seleccionado,
                 tipo_entrega=tipo_entrega,
                 exclude_pk=exclude_pk,
             )
+            
+            # Guardar warnings para que la vista los muestre como mensajes
+            self._validation_warnings = validation_warnings
             
             for error in validation_errors:
                 if error.field_name:

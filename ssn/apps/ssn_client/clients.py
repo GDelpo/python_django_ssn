@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 import certifi
 import jwt
 import requests
-from requests.exceptions import RequestException
+from requests.exceptions import ConnectionError, ReadTimeout, RequestException, Timeout
 
 # Configuración del logger para registrar eventos e información relevante.
 logger = logging.getLogger("ssn_client")
@@ -41,6 +41,7 @@ class SsnService(metaclass=Singleton):
         retry_delay: int = 2,
         token_refresh_margin: int = 300,  # 5 minutos en segundos
         verify_ssl: bool = True,  # Verificación SSL (False para entornos de test con cert self-signed)
+        request_timeout: Tuple[int, int] = (10, 20),  # (connect_timeout, read_timeout) en segundos
     ) -> None:
         # Evita re-inicializar la instancia si ya fue creada.
         if hasattr(self, "_initialized") and self._initialized:
@@ -54,6 +55,7 @@ class SsnService(metaclass=Singleton):
         self.retry_delay = retry_delay
         self.token_refresh_margin = token_refresh_margin
         self.verify_ssl = certifi.where() if verify_ssl else False
+        self.request_timeout = request_timeout
         self.session = requests.Session()
         # Se intenta obtener el token de autenticación al instanciar el servicio.
         self.token = self._get_token()
@@ -71,7 +73,10 @@ class SsnService(metaclass=Singleton):
         data = {"user": self.username, "cia": self.cia, "password": self.password}
         token_url = f"{self.base_url}/login"
         try:
-            response = self.session.post(token_url, json=data, headers=headers, verify=self.verify_ssl)
+            response = self.session.post(
+                token_url, json=data, headers=headers,
+                verify=self.verify_ssl, timeout=self.request_timeout,
+            )
             if response.status_code == HTTPStatus.OK:
                 token = response.json().get("token")
                 logger.debug("Token obtenido exitosamente.")
@@ -79,6 +84,10 @@ class SsnService(metaclass=Singleton):
             logger.error(
                 f"Error obteniendo token: {response.status_code} - {response.text}"
             )
+        except Timeout as timeout_err:
+            logger.error(f"Timeout al solicitar token de SSN ({self.request_timeout}s): {timeout_err}")
+        except ConnectionError as conn_err:
+            logger.error(f"Error de conexión al solicitar token de SSN: {conn_err}")
         except RequestException as req_err:
             logger.error(f"Excepción en la solicitud de token: {req_err}")
         except Exception as e:
@@ -211,7 +220,7 @@ class SsnService(metaclass=Singleton):
             self._log_request_payload(kwargs)
 
             try:
-                response = request_func(url, **kwargs, verify=self.verify_ssl)
+                response = request_func(url, **kwargs, verify=self.verify_ssl, timeout=self.request_timeout)
                 status_code = response.status_code
 
                 # Loggear la respuesta
@@ -226,7 +235,7 @@ class SsnService(metaclass=Singleton):
                 if status_code == HTTPStatus.UNAUTHORIZED:
                     if self._handle_unauthorized(kwargs):
                         # Reintentar con token nuevo
-                        response = request_func(url, **kwargs)
+                        response = request_func(url, **kwargs, verify=self.verify_ssl, timeout=self.request_timeout)
                         status_code = response.status_code
                         response_data = self._parse_response(response)
                     else:
@@ -245,6 +254,13 @@ class SsnService(metaclass=Singleton):
                     )
                     return response_data, status_code
 
+            except Timeout as timeout_err:
+                logger.error(
+                    f"Timeout en la solicitud a {url} (intento {attempt}/{self.max_retries}, "
+                    f"timeout={self.request_timeout}s): {timeout_err}"
+                )
+            except ConnectionError as conn_err:
+                logger.error(f"Error de conexión a {url} (intento {attempt}/{self.max_retries}): {conn_err}")
             except RequestException as req_err:
                 logger.error(f"Excepción en la solicitud a {url}: {req_err}")
             except Exception as e:

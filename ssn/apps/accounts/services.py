@@ -124,7 +124,7 @@ class IdentityServiceClient:
             User data or None if request fails
         """
         try:
-            url = f"{self.base_url}/users/me"
+            url = f"{self.base_url}/me"
             headers = {"Authorization": f"Bearer {token}"}
 
             response = requests.get(
@@ -227,6 +227,8 @@ class AuthenticationService:
             if user:
                 user.last_login_via = "identity_service"
                 user.save(update_fields=["last_login_via", "last_login"])
+                # Set backend so django.contrib.auth.login() knows which to use
+                user.backend = "accounts.backends.IdentityServiceBackend"
                 logger.info(f"✅ User {email} authenticated via identity service")
 
             return user
@@ -248,10 +250,14 @@ class AuthenticationService:
             email = user_info.get("mail") or user_info.get("email")
             first_name = user_info.get("first_name", "")
             last_name = user_info.get("last_name", "")
+            role = (user_info.get("role") or "").lower()
 
             if not email:
                 logger.error("User info from identity service missing email")
                 return None
+
+            # Map identity service role to Django permissions
+            is_admin = role == "admin"
 
             # Get or create user
             user, created = User.objects.update_or_create(
@@ -264,11 +270,13 @@ class AuthenticationService:
                     "identity_service_token": token,
                     "identity_service_token_obtained_at": timezone.now(),
                     "is_active": True,
+                    "is_staff": is_admin,
+                    "is_superuser": is_admin,
                 },
             )
 
             action = "created" if created else "updated"
-            logger.info(f"User {action} in local DB: {email}")
+            logger.info(f"User {action} in local DB: {email} (role={role}, is_staff={is_admin})")
 
             return user
 

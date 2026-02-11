@@ -98,6 +98,9 @@ class LoginView(FormView):
             getattr(settings, "IDENTITY_SERVICE_URL", "").strip()
         )
         context["page_title"] = "Iniciar Sesión"
+        context["support_email"] = getattr(
+            settings, "SUPPORT_EMAIL", "soporte@compania.com"
+        )
         return context
 
 

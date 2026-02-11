@@ -127,6 +127,10 @@ class SolicitudBaseCreateView(
         # El estado se sincronizará solo cuando se envíe a SSN
         SessionService.set_base_request(self.request, self.object)
         
+        # Mostrar advertencias de validación (ej: SSN no disponible)
+        for warning in getattr(form, '_validation_warnings', []):
+            messages.warning(self.request, warning)
+        
         # Si es mensual, generar stocks automáticamente
         if self.object.tipo_entrega == TipoEntrega.MENSUAL:
             result = MonthlyReportGeneratorService.generate_monthly_stocks(self.object)

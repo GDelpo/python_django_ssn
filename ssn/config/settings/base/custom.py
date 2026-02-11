@@ -34,7 +34,7 @@ SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="soporte@compania.com")
 # --- Configuraciones de Terceros ---
 TAILWIND_APP_NAME = "theme"
 INTERNAL_IPS = ["127.0.0.1"]
-NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd" if os.name == "nt" else "/usr/bin/npm"
+NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd" if os.name == "nt" else "/usr/local/bin/npm"
 REST_FRAMEWORK = {"DEFAULT_THROTTLE_RATES": {"anon": "100/day", "user": "1000/day"}}
 
 # --- Configuración de la Compañía ---

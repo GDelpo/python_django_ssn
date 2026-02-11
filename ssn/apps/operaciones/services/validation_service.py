@@ -24,6 +24,7 @@ class ValidationResult:
     is_valid: bool
     error_message: str | None = None
     field_name: str | None = None  # Campo específico donde mostrar el error
+    warning_message: str | None = None  # Advertencia no bloqueante para el usuario
 
 
 class SolicitudValidationService:
@@ -219,6 +220,18 @@ class SolicitudValidationService:
             estado_ssn, response, status = consultar_estado_ssn(temp_request)
             logger.info(f"Validación SSN para {cronograma} ({tipo_entrega}): estado={estado_ssn}, status={status}")
             
+            # Si no se pudo obtener el estado (error de conexión, timeout, etc.)
+            if estado_ssn is None:
+                logger.warning(f"No se pudo obtener estado SSN para {cronograma}: status={status}, response={response}")
+                return ValidationResult(
+                    is_valid=True,
+                    warning_message=(
+                        "No se pudo verificar el estado en la SSN (servicio no disponible). "
+                        "La solicitud se creará sin validación de estado SSN. "
+                        "Verifique manualmente antes de enviar."
+                    ),
+                )
+            
             estado_ssn_upper = estado_ssn.upper() if estado_ssn else ""
             field_name = "cronograma_mensual" if tipo_entrega == "Mensual" else "cronograma_semanal"
             
@@ -248,9 +261,16 @@ class SolicitudValidationService:
             return ValidationResult(is_valid=True)
             
         except Exception as e:
-            # Si hay error de conectividad, permitir continuar pero loguear
+            # Si hay error de conectividad, permitir continuar pero avisar al usuario
             logger.error(f"Error al consultar SSN para {cronograma}: {str(e)}")
-            return ValidationResult(is_valid=True)  # No bloqueamos por errores de red
+            return ValidationResult(
+                is_valid=True,
+                warning_message=(
+                    "No se pudo verificar el estado en la SSN (servicio no disponible). "
+                    "La solicitud se creará sin validación de estado SSN. "
+                    "Verifique manualmente antes de enviar."
+                ),
+            )
 
     # =========================================================================
     # VALIDACIÓN DE MENSUAL (DATOS NECESARIOS)
@@ -299,7 +319,7 @@ class SolicitudValidationService:
         tipo_entrega: str,
         exclude_pk: int | None = None,
         skip_ssn: bool = False
-    ) -> list[ValidationResult]:
+    ) -> tuple[list[ValidationResult], list[str]]:
         """
         Ejecuta todas las validaciones necesarias para crear una solicitud.
         
@@ -310,15 +330,18 @@ class SolicitudValidationService:
             skip_ssn: Si es True, omite la validación contra SSN
             
         Returns:
-            Lista de ValidationResult con errores (vacía si todo es válido)
+            Tupla (errores, advertencias):
+            - errores: Lista de ValidationResult con errores (vacía si todo es válido)
+            - advertencias: Lista de strings con mensajes de advertencia no bloqueantes
         """
         errors = []
+        warnings = []
         
         # 1. Validar duplicados
         result = cls.validate_no_duplicate(cronograma, tipo_entrega, exclude_pk)
         if not result.is_valid:
             errors.append(result)
-            return errors  # Si hay duplicado, no tiene sentido seguir validando
+            return errors, warnings  # Si hay duplicado, no tiene sentido seguir validando
         
         # 2. Validar cronograma anterior enviado
         result = cls.validate_previous_cronograma_sent(cronograma, tipo_entrega)
@@ -330,6 +353,8 @@ class SolicitudValidationService:
             result = cls.validate_ssn_status(cronograma, tipo_entrega)
             if not result.is_valid:
                 errors.append(result)
+            elif result.warning_message:
+                warnings.append(result.warning_message)
         
         # 4. Validaciones específicas para mensual
         if tipo_entrega == "Mensual" and not errors:
@@ -337,4 +362,4 @@ class SolicitudValidationService:
             if not result.is_valid:
                 errors.append(result)
         
-        return errors
+        return errors, warnings

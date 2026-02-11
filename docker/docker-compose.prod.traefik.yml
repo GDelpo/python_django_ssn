@@ -117,9 +117,9 @@ services:
       - "traefik.docker.network=traefik-public"
 
       # Router: Host-based routing
-      # SSN catches ALL traffic for SSL_DOMAIN (except /identidad and /mailsender
+      # SSN catches ALL traffic for SSL_DOMAIN/SSL_IP (except /identidad and /mailsender
       # which are handled by their own PathPrefix routers with higher priority)
-      - "traefik.http.routers.ssn.rule=Host(`${SSL_DOMAIN}`)"
+      - "traefik.http.routers.ssn.rule=Host(`${SSL_DOMAIN}`) || Host(`${SSL_IP}`)"
       - "traefik.http.routers.ssn.entrypoints=web"
       - "traefik.http.routers.ssn.service=ssn"
       - "traefik.http.routers.ssn.priority=1"
@@ -129,8 +129,6 @@ services:
 
       # Service: Load balancer
       - "traefik.http.services.ssn.loadbalancer.server.port=8000"
-      - "traefik.http.services.ssn.loadbalancer.healthcheck.path=/health/"
-      - "traefik.http.services.ssn.loadbalancer.healthcheck.interval=30s"
 
       # HTTPS Router (uncomment when Traefik has SSL configured)
       # - "traefik.http.routers.ssn-secure.rule=Host(`${SSL_DOMAIN}`)"
