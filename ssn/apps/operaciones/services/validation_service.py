@@ -224,11 +224,10 @@ class SolicitudValidationService:
             if estado_ssn is None:
                 logger.warning(f"No se pudo obtener estado SSN para {cronograma}: status={status}, response={response}")
                 return ValidationResult(
-                    is_valid=True,
-                    warning_message=(
+                    is_valid=False,
+                    error_message=(
                         "No se pudo verificar el estado en la SSN (servicio no disponible). "
-                        "La solicitud se creará sin validación de estado SSN. "
-                        "Verifique manualmente antes de enviar."
+                        "Intente nuevamente en unos minutos."
                     ),
                 )
             
@@ -261,14 +260,12 @@ class SolicitudValidationService:
             return ValidationResult(is_valid=True)
             
         except Exception as e:
-            # Si hay error de conectividad, permitir continuar pero avisar al usuario
             logger.error(f"Error al consultar SSN para {cronograma}: {str(e)}")
             return ValidationResult(
-                is_valid=True,
-                warning_message=(
+                is_valid=False,
+                error_message=(
                     "No se pudo verificar el estado en la SSN (servicio no disponible). "
-                    "La solicitud se creará sin validación de estado SSN. "
-                    "Verifique manualmente antes de enviar."
+                    "Intente nuevamente en unos minutos."
                 ),
             )
 
