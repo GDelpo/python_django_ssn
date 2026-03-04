@@ -4,6 +4,7 @@ from typing import Tuple, Dict, Any, Optional
 
 from django.apps import apps
 from django.utils import timezone
+from operaciones.helpers import normalizar_texto
 from operaciones.models import EstadoSolicitud
 from ssn_client.models import SolicitudResponse
 
@@ -14,7 +15,9 @@ logger = logging.getLogger("ssn_client")
 class EstadoSSN:
     """
     Estados que devuelve la API de la SSN.
-    IMPORTANTE: Los valores deben coincidir EXACTAMENTE con lo que devuelve la API.
+    Los valores canónicos se definen aquí. La comparación con la respuesta
+    de la API se hace de forma normalizada (sin acentos, case-insensitive)
+    para absorber variaciones como "VACÍO" vs "VACIO".
     """
     VACIO = "VACÍO"
     NO_PRESENTADO = "No Presentado"  # Estado sintético cuando no existe entrega
@@ -22,6 +25,31 @@ class EstadoSSN:
     PRESENTADO = "Presentado"
     RECTIFICACION_PENDIENTE = "Rectificación Pendiente"
     A_RECTIFICAR = "A Rectificar"
+
+    # Lookup normalizado -> valor canónico (se construye una sola vez)
+    _LOOKUP = None
+
+    @classmethod
+    def _build_lookup(cls):
+        if cls._LOOKUP is None:
+            cls._LOOKUP = {}
+            for attr in ("VACIO", "CARGADO", "PRESENTADO",
+                         "RECTIFICACION_PENDIENTE", "A_RECTIFICAR"):
+                valor = getattr(cls, attr)
+                cls._LOOKUP[normalizar_texto(valor)] = valor
+        return cls._LOOKUP
+
+    @classmethod
+    def normalizar(cls, estado_api: str) -> str:
+        """
+        Recibe el estado crudo de la API y devuelve el valor canónico.
+        Ej: "VACIO" -> "VACÍO", "presentado" -> "Presentado",
+            "rectificacion pendiente" -> "Rectificación Pendiente"
+        Si no matchea ninguno conocido, retorna el valor original.
+        """
+        lookup = cls._build_lookup()
+        normalizado = normalizar_texto(estado_api)
+        return lookup.get(normalizado, estado_api)
 
 
 def consultar_estado_ssn(
@@ -80,7 +108,10 @@ def consultar_estado_ssn(
         # - {"estado": "Presentado", ...} cuando existe la entrega
         # - {"message": "No existe entrega en el periodo y compañía enviado."} cuando no existe
         if "estado" in response:
-            estado = response.get("estado")
+            estado_crudo = response.get("estado")
+            estado = EstadoSSN.normalizar(estado_crudo)
+            if estado != estado_crudo:
+                logger.debug(f"Estado SSN normalizado: '{estado_crudo}' -> '{estado}'")
         elif "message" in response and "No existe entrega" in response.get("message", ""):
             estado = EstadoSSN.NO_PRESENTADO
         else:
@@ -308,13 +339,14 @@ def solicitar_rectificacion_ssn(base_request) -> Tuple[Dict[str, Any], int, Any]
             return {"error": msg, "estado_ssn": estado_ssn}, HTTPStatus.CONFLICT, None
 
         # 2) Determinar endpoint de rectificación
+        #    Se usa el mismo endpoint de entrega (PUT en vez de POST)
         from operaciones.models import TipoEntrega
         
         tipo_entrega = base_request.tipo_entrega
         if tipo_entrega == TipoEntrega.SEMANAL:
-            endpoint = "rectificarEntregaSemanal"
+            endpoint = "entregaSemanal"
         elif tipo_entrega == TipoEntrega.MENSUAL:
-            endpoint = "rectificarEntregaMensual"
+            endpoint = "entregaMensual"
         else:
             return (
                 {"error": "Tipo de entrega inválido"},

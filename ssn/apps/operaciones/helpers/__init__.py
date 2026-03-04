@@ -15,7 +15,7 @@ from .mixins import (
     StandaloneViewMixin,
 )
 from .model_utils import get_mapping_model, get_related_names_map
-from .text_utils import camel_to_title, to_camel_case
+from .text_utils import camel_to_title, normalizar_texto, to_camel_case
 
 __all__ = [
     "generate_monthly_options",
@@ -32,6 +32,7 @@ __all__ = [
     "get_mapping_model",
     "get_related_names_map",
     "camel_to_title",
+    "normalizar_texto",
     "to_camel_case",
     "OperationReadonlyViewMixin",
     "OperationEditViewMixin",

@@ -1,5 +1,26 @@
 import json
 import re
+import unicodedata
+
+
+def normalizar_texto(texto: str) -> str:
+    """Elimina acentos/diacríticos y convierte a minúsculas para comparación robusta.
+
+    Args:
+        texto (str): Texto con posibles acentos o mayúsculas.
+
+    Returns:
+        str: Texto normalizado sin acentos, en minúsculas y sin espacios extra.
+
+    Example:
+        >>> normalizar_texto("VACÍO")
+        'vacio'
+        >>> normalizar_texto("Rectificación Pendiente")
+        'rectificacion pendiente'
+    """
+    nfkd = unicodedata.normalize("NFKD", texto)
+    sin_acentos = "".join(c for c in nfkd if not unicodedata.combining(c))
+    return sin_acentos.strip().lower()
 
 
 def camel_to_title(text):
