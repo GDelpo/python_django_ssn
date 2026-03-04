@@ -64,6 +64,10 @@ class BaseRequestModel(models.Model):
         """
         Sincroniza el estado local con el estado en la SSN.
         Retorna True si hubo cambio de estado, False en caso contrario.
+
+        Regla de no-regresión: si el estado local es RECTIFICACION_PENDIENTE y la SSN
+        todavía devuelve PRESENTADO, significa que la SSN aún no procesó la solicitud
+        de rectificación. En ese caso NO se sobreescribe el estado local.
         """
         if self.estado == EstadoSolicitud.BORRADOR:
             return False
@@ -84,6 +88,20 @@ class BaseRequestModel(models.Model):
             }
 
             nuevo_estado = estado_local_mapping.get(estado_ssn)
+
+            # Protección: no revertir RECTIFICACION_PENDIENTE a PRESENTADO.
+            # Ocurre inmediatamente después de solicitar la rectificación,
+            # cuando la SSN aún no reflejó el cambio.
+            if (
+                self.estado == EstadoSolicitud.RECTIFICACION_PENDIENTE
+                and nuevo_estado == EstadoSolicitud.PRESENTADO
+            ):
+                logger.info(
+                    f"Sync omitida para {self.uuid}: estado local RECTIFICACION_PENDIENTE "
+                    f"conservado (SSN aún reporta PRESENTADO)."
+                )
+                return False
+
             if nuevo_estado and nuevo_estado != self.estado:
                 logger.info(
                     f"Sincronizando estado de {self.uuid}: "

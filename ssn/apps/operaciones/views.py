@@ -378,8 +378,9 @@ class OperacionListView(
 
             # Si está PRESENTADO → Solicitar rectificación
             if estado_ssn == EstadoSSN.PRESENTADO:
+                # Pasamos el estado ya conocido para evitar una consulta redundante a la SSN
                 response_data, status, _ = solicitar_rectificacion_ssn(
-                    self.base_request
+                    self.base_request, estado_ssn_conocido=estado_ssn
                 )
 
                 if 200 <= status < 300:

@@ -311,42 +311,53 @@ def enviar_y_guardar_solicitud(base_request, operations, allow_empty=False):
         )
 
 
-def solicitar_rectificacion_ssn(base_request) -> Tuple[Dict[str, Any], int, Any]:
+def solicitar_rectificacion_ssn(
+    base_request,
+    estado_ssn_conocido: Optional[str] = None,
+) -> Tuple[Dict[str, Any], int, Any]:
     """
     Solicita una rectificación para una entrega PRESENTADA.
 
-    Esta función debe usarse cuando el estado SSN es PRESENTADO y se necesita
-    modificar la información. Enviará una solicitud de rectificación que quedará
-    en estado RECTIFICACIÓN PENDIENTE hasta que la SSN la apruebe.
+    Envía un PUT al mismo endpoint de entrega. La SSN cambiará el estado a
+    RECTIFICACIÓN PENDIENTE hasta que lo apruebe, momento en el que pasará
+    a A RECTIFICAR.
 
     Args:
-        base_request: Instancia de BaseRequestModel
+        base_request: Instancia de BaseRequestModel.
+        estado_ssn_conocido: Si el llamador ya consultó el estado SSN, se puede
+            pasar aquí para evitar una consulta redundante a la API.
 
     Returns:
         Tupla (response, status_code, obj_response)
     """
     try:
-        # 1) Verificar que el estado SSN permita solicitar rectificación
-        estado_ssn, datos_ssn, status_consulta = consultar_estado_ssn(base_request)
-
-        if status_consulta >= 400:
-            msg = f"No se pudo consultar el estado: {datos_ssn.get('error', 'Error desconocido')}"
-            return {"error": msg}, status_consulta, None
+        # 1) Verificar que el estado SSN permita solicitar rectificación.
+        #    Si el caller ya lo consultó, reutilizamos ese valor.
+        if estado_ssn_conocido is not None:
+            estado_ssn = estado_ssn_conocido
+        else:
+            estado_ssn, datos_ssn, status_consulta = consultar_estado_ssn(base_request)
+            if status_consulta >= 400:
+                msg = f"No se pudo consultar el estado: {datos_ssn.get('error', 'Error desconocido')}"
+                return {"error": msg}, status_consulta, None
 
         if estado_ssn != EstadoSSN.PRESENTADO:
             msg = f"Solo se puede solicitar rectificación de entregas PRESENTADAS. Estado actual: {estado_ssn}"
             logger.warning(msg)
             return {"error": msg, "estado_ssn": estado_ssn}, HTTPStatus.CONFLICT, None
 
-        # 2) Determinar endpoint de rectificación
-        #    Se usa el mismo endpoint de entrega (PUT en vez de POST)
+        # 2) Determinar endpoint.
+        #    La SSN usa el mismo endpoint de entrega pero con método PUT.
+        #    Se guarda con un label descriptivo para el historial.
         from operaciones.models import TipoEntrega
-        
+
         tipo_entrega = base_request.tipo_entrega
         if tipo_entrega == TipoEntrega.SEMANAL:
-            endpoint = "entregaSemanal"
+            endpoint_url = "entregaSemanal"
+            endpoint_label = "rectificarEntregaSemanal"
         elif tipo_entrega == TipoEntrega.MENSUAL:
-            endpoint = "entregaMensual"
+            endpoint_url = "entregaMensual"
+            endpoint_label = "rectificarEntregaMensual"
         else:
             return (
                 {"error": "Tipo de entrega inválido"},
@@ -354,35 +365,39 @@ def solicitar_rectificacion_ssn(base_request) -> Tuple[Dict[str, Any], int, Any]
                 None,
             )
 
-        # 3) Preparar payload mínimo (solo identificadores)
+        # 3) Payload mínimo (solo identificadores)
         payload = {
             "codigoCompania": base_request.codigo_compania or "0744",
-            "tipoEntrega": base_request.tipo_entrega,  # Ya es el valor correcto ("Semanal" o "Mensual")
+            "tipoEntrega": base_request.tipo_entrega,
             "cronograma": base_request.cronograma,
         }
 
         # 4) Enviar solicitud de rectificación (PUT)
         ssn_client = apps.get_app_config("ssn_client").ssn_client
         logger.info(
-            f"Solicitando rectificación en {endpoint} para {base_request.uuid}"
+            f"Solicitando rectificación en {endpoint_url} (label: {endpoint_label}) "
+            f"para {base_request.uuid}"
         )
-        response, status = ssn_client.put_resource(endpoint, data=payload)
+        response, status = ssn_client.put_resource(endpoint_url, data=payload)
 
-        # 5) Guardar respuesta
+        # 5) Guardar respuesta con label descriptivo para el historial
         obj_response = guardar_respuesta_solicitud(
-            base_request, endpoint, payload, response, status
+            base_request, endpoint_label, payload, response, status
         )
 
         if status >= 400:
             logger.error(f"Error al solicitar rectificación: {status} - {response}")
             return response, status, obj_response
 
-        # 6) Actualizar estado local a RECTIFICACION_PENDIENTE (no RECTIFICANDO)
+        # 6) Actualizar estado local: RECTIFICACION_PENDIENTE.
+        #    A partir de aquí sync_estado_con_ssn no revertirá este estado
+        #    mientras la SSN siga reportando PRESENTADO.
         base_request.estado = EstadoSolicitud.RECTIFICACION_PENDIENTE
         base_request.save()
 
         logger.info(
-            f"Solicitud de rectificación enviada correctamente para {base_request.uuid}"
+            f"Solicitud de rectificación enviada correctamente para {base_request.uuid}. "
+            f"Estado local -> RECTIFICACION_PENDIENTE."
         )
         return response, status, obj_response
 
