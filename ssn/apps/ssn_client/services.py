@@ -4,7 +4,7 @@ from typing import Tuple, Dict, Any, Optional
 
 from django.apps import apps
 from django.utils import timezone
-from operaciones.helpers import normalizar_texto
+from operaciones.helpers.text_utils import normalizar_texto
 from operaciones.models import EstadoSolicitud
 from ssn_client.models import SolicitudResponse
 
