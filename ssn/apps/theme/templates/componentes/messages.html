@@ -1,4 +1,4 @@
-{% if messages %}
+{% if messages and request.user.is_authenticated %}
   <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col items-end max-w-sm space-y-4">
     {% for message in messages %}
       <div class="flex items-center space-x-4 p-4 shadow-lg rounded-md text-sm font-medium transition-all transform translate-x-0 duration-300 ease-out
